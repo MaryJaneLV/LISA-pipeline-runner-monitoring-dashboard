@@ -1,0 +1,91 @@
+#!/bin/bash
+set -e
+
+echo "Starting Scientific Workflow Pipeline Runner..."
+
+# Function to check if command exists
+check_command() {
+  if ! command -v $1 &> /dev/null; then
+    echo "Error: $1 is not installed. Please install it and try again."
+    exit 1
+  fi
+}
+
+# Check required commands
+check_command docker
+check_command kind
+check_command kubectl
+check_command helm
+
+# Create kind cluster with the correct configuration
+echo "Setting up Kind cluster..."
+chmod +x ./infrastructure/kind/setup.sh
+./infrastructure/kind/setup.sh
+
+# Create the scientific-workflow namespace
+kubectl create namespace scientific-workflow 2>/dev/null || true
+
+# Build and load Docker images to Kind
+echo "Building and loading Docker images..."
+docker build -t scientific-workflow-backend:latest ./backend
+docker build -t scientific-workflow-frontend:latest ./frontend
+
+kind load docker-image scientific-workflow-backend:latest --name scientific-workflow
+kind load docker-image scientific-workflow-frontend:latest --name scientific-workflow
+
+# Install Argo Workflows
+echo "Installing Argo Workflows..."
+chmod +x ./infrastructure/argo/install.sh
+./infrastructure/argo/install.sh
+
+# Install Kubernetes Dashboard
+echo "Installing Kubernetes Dashboard..."
+chmod +x ./infrastructure/dashboard/install.sh
+./infrastructure/dashboard/install.sh
+
+# Install Minio
+echo "Installing Minio..."
+chmod +x ./infrastructure/minio/install.sh
+./infrastructure/minio/install.sh
+
+# Install Redis
+echo "Installing Redis..."
+chmod +x ./infrastructure/redis/install.sh
+./infrastructure/redis/install.sh
+
+# Setup MongoDB
+echo "Setting up MongoDB..."
+kubectl apply -f ./kubernetes/mongo/deployment.yaml
+
+# Wait for MongoDB to be ready
+echo "Waiting for MongoDB to be ready..."
+kubectl wait --for=condition=ready pod -l app=mongo -n scientific-workflow --timeout=300s
+
+# Apply sample workflow template
+echo "Applying sample workflow template..."
+kubectl apply -f ./workflows/data-processing-workflow.yaml
+
+# Deploy backend
+echo "Deploying backend..."
+kubectl apply -f ./kubernetes/backend/deployment.yaml
+
+# Deploy frontend
+echo "Deploying frontend..."
+kubectl apply -f ./kubernetes/frontend/deployment.yaml
+
+echo "Waiting for all services to be ready..."
+kubectl wait --for=condition=ready pod -l app=backend -n scientific-workflow --timeout=300s
+kubectl wait --for=condition=ready pod -l app=frontend -n scientific-workflow --timeout=300s
+
+nohup kubectl -n scientific-workflow port-forward svc/argo-server 2746:2746 &
+
+echo "Scientific Workflow Pipeline Runner is now running!"
+echo
+echo "Access the following services:"
+echo "Argo Workflows UI:       http://localhost:2746"
+echo "Kubernetes Dashboard:    https://localhost:30081 (Access with token printed above)"
+echo "Minio Console:           http://localhost:30082 (minioadmin/minioadmin)"
+echo "Scientific Workflow API: http://localhost:30083"
+echo "Scientific Workflow UI:  http://localhost:30084"
+echo
+echo "To shut down the system, run: kind delete cluster --name scientific-workflow"

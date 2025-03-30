@@ -1,0 +1,292 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: data-processing-pipeline
+  namespace: scientific-workflow
+spec:
+  entrypoint: main
+  arguments:
+    parameters:
+    - name: input-data-url
+      description: URL to the input data file
+    - name: data-threshold
+      description: Threshold value for data filtering
+      default: "0.5"
+    - name: output-bucket
+      description: Minio bucket to store results
+      default: "workflow-outputs"
+  
+  # Volume for data exchange between steps
+  volumeClaimTemplates:
+  - metadata:
+      name: workdir
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 1Gi
+  
+  # Artifact repositories configuration
+  artifactRepositoryRef:
+    configMap: artifact-repositories
+    key: default-v1
+  
+  # Main DAG template
+  templates:
+  - name: main
+    dag:
+      tasks:
+      - name: fetch-data
+        template: fetch-data
+        arguments:
+          parameters:
+          - name: input-url
+            value: "{{workflow.parameters.input-data-url}}"
+      
+      - name: validate-data
+        template: validate-data
+        dependencies: [fetch-data]
+        arguments:
+          artifacts:
+          - name: raw-data
+            from: "{{tasks.fetch-data.outputs.artifacts.raw-data}}"
+      
+      - name: process-data
+        template: process-data
+        dependencies: [validate-data]
+        arguments:
+          parameters:
+          - name: threshold
+            value: "{{workflow.parameters.data-threshold}}"
+          artifacts:
+          - name: validated-data
+            from: "{{tasks.validate-data.outputs.artifacts.validated-data}}"
+      
+      - name: analyze-results
+        template: analyze-results
+        dependencies: [process-data]
+        arguments:
+          artifacts:
+          - name: processed-data
+            from: "{{tasks.process-data.outputs.artifacts.processed-data}}"
+      
+      - name: store-results
+        template: store-results
+        dependencies: [analyze-results]
+        arguments:
+          parameters:
+          - name: bucket
+            value: "{{workflow.parameters.output-bucket}}"
+          artifacts:
+          - name: analysis-results
+            from: "{{tasks.analyze-results.outputs.artifacts.analysis-results}}"
+  
+  # Individual step templates
+  - name: fetch-data
+    inputs:
+      parameters:
+      - name: input-url
+    container:
+      image: curlimages/curl:8.2.1
+      command: [sh, -c]
+      args:
+      - |
+        mkdir -p /workdir
+        echo "Fetching data from {{inputs.parameters.input-url}}"
+        curl -L "{{inputs.parameters.input-url}}" -o /workdir/raw-data.csv
+        echo "Data fetched successfully"
+      volumeMounts:
+      - name: workdir
+        mountPath: /workdir
+    outputs:
+      artifacts:
+      - name: raw-data
+        path: /workdir/raw-data.csv
+  
+  - name: validate-data
+    inputs:
+      artifacts:
+      - name: raw-data
+        path: /workdir/raw-data.csv
+    container:
+      image: python:3.9-slim
+      command: [python3, -c]
+      args:
+      - |
+        import pandas as pd
+        import os
+        
+        print("Validating data...")
+        # Load the data
+        df = pd.read_csv('/workdir/raw-data.csv')
+        
+        # Perform validation (example: check for missing values)
+        if df.isnull().values.any():
+            print(f"Warning: Found {df.isnull().sum().sum()} missing values")
+            # Fill missing values with column means
+            df = df.fillna(df.mean())
+        
+        # Check for duplicates
+        dupes = df.duplicated().sum()
+        if dupes > 0:
+            print(f"Found {dupes} duplicate rows, removing...")
+            df = df.drop_duplicates()
+        
+        # Save validated data
+        df.to_csv('/workdir/validated-data.csv', index=False)
+        print("Data validation completed")
+      volumeMounts:
+      - name: workdir
+        mountPath: /workdir
+    outputs:
+      artifacts:
+      - name: validated-data
+        path: /workdir/validated-data.csv
+  
+  - name: process-data
+    inputs:
+      parameters:
+      - name: threshold
+      artifacts:
+      - name: validated-data
+        path: /workdir/validated-data.csv
+    container:
+      image: python:3.9-slim
+      command: [python3, -c]
+      args:
+      - |
+        import pandas as pd
+        import numpy as np
+        import os
+        
+        threshold = float("{{inputs.parameters.threshold}}")
+        print(f"Processing data with threshold: {threshold}")
+        
+        # Load the validated data
+        df = pd.read_csv('/workdir/validated-data.csv')
+        
+        # Apply some processing (example: filter by threshold)
+        numeric_cols = df.select_dtypes(include=[np.number]).columns
+        
+        for col in numeric_cols:
+            # Apply threshold filtering on numeric columns
+            df[f"{col}_above_threshold"] = df[col] > threshold
+        
+        # Add a calculated column as an example
+        if len(numeric_cols) > 0:
+            df['mean_value'] = df[numeric_cols].mean(axis=1)
+        
+        # Save processed data
+        df.to_csv('/workdir/processed-data.csv', index=False)
+        print("Data processing completed")
+      volumeMounts:
+      - name: workdir
+        mountPath: /workdir
+    outputs:
+      artifacts:
+      - name: processed-data
+        path: /workdir/processed-data.csv
+  
+  - name: analyze-results
+    inputs:
+      artifacts:
+      - name: processed-data
+        path: /workdir/processed-data.csv
+    container:
+      image: python:3.9-slim
+      command: [python3, -c]
+      args:
+      - |
+        import pandas as pd
+        import numpy as np
+        import matplotlib.pyplot as plt
+        import json
+        import os
+        
+        print("Analyzing results...")
+        
+        # Load the processed data
+        df = pd.read_csv('/workdir/processed-data.csv')
+        
+        # Generate summary statistics
+        summary = df.describe().to_dict()
+        
+        # Create a simple visualization
+        if len(df.columns) > 0:
+            numeric_cols = df.select_dtypes(include=[np.number]).columns
+            if len(numeric_cols) > 0:
+                plt.figure(figsize=(10, 6))
+                df[numeric_cols[:5]].hist(bins=20, figsize=(15, 10))
+                plt.tight_layout()
+                plt.savefig('/workdir/histograms.png')
+                
+                # Create correlation matrix
+                corr_matrix = df[numeric_cols].corr()
+                plt.figure(figsize=(12, 10))
+                plt.matshow(corr_matrix, fignum=1)
+                plt.colorbar()
+                plt.savefig('/workdir/correlation.png')
+        
+        # Save summary to JSON file
+        with open('/workdir/analysis-summary.json', 'w') as f:
+            json.dump(summary, f, indent=2)
+            
+        # Create a simple report
+        with open('/workdir/analysis-report.md', 'w') as f:
+            f.write("# Data Analysis Report\n\n")
+            f.write(f"## Dataset Information\n\n")
+            f.write(f"* Number of records: {len(df)}\n")
+            f.write(f"* Number of columns: {len(df.columns)}\n\n")
+            
+            if len(numeric_cols) > 0:
+                f.write("## Numeric Column Statistics\n\n")
+                for col in numeric_cols[:5]:  # First 5 numeric columns
+                    f.write(f"### {col}\n\n")
+                    f.write(f"* Mean: {df[col].mean():.4f}\n")
+                    f.write(f"* Median: {df[col].median():.4f}\n")
+                    f.write(f"* Std Dev: {df[col].std():.4f}\n")
+                    f.write(f"* Min: {df[col].min():.4f}\n")
+                    f.write(f"* Max: {df[col].max():.4f}\n\n")
+        
+        # Create a tar archive of all outputs
+        os.system('tar -czf /workdir/analysis-results.tar.gz -C /workdir analysis-summary.json analysis-report.md histograms.png correlation.png')
+        print("Analysis completed")
+      volumeMounts:
+      - name: workdir
+        mountPath: /workdir
+    outputs:
+      artifacts:
+      - name: analysis-results
+        path: /workdir/analysis-results.tar.gz
+  
+  - name: store-results
+    inputs:
+      parameters:
+      - name: bucket
+      artifacts:
+      - name: analysis-results
+        path: /workdir/analysis-results.tar.gz
+    container:
+      image: minio/mc:RELEASE.2023-09-30T07-02-29Z
+      command: [sh, -c]
+      args:
+      - |
+        echo "Storing results in {{inputs.parameters.bucket}} bucket..."
+        
+        # Create unique folder based on workflow name and time
+        FOLDER="{{workflow.name}}/{{workflow.creationTimestamp}}"
+        
+        # Configure minio client
+        mc alias set myminio http://minio:9000 minioadmin minioadmin
+        
+        # Upload results
+        mc cp /workdir/analysis-results.tar.gz myminio/{{inputs.parameters.bucket}}/$FOLDER/
+        
+        # Create a manifest file
+        echo "{\"workflow\": \"{{workflow.name}}\", \"timestamp\": \"{{workflow.creationTimestamp}}\", \"path\": \"$FOLDER/analysis-results.tar.gz\"}" > /workdir/manifest.json
+        mc cp /workdir/manifest.json myminio/{{inputs.parameters.bucket}}/$FOLDER/
+        
+        echo "Results stored successfully to: {{inputs.parameters.bucket}}/$FOLDER/"
+      volumeMounts:
+      - name: workdir
+        mountPath: /workdir

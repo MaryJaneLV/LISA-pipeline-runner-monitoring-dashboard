@@ -1,0 +1,105 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: scientific-workflow
+  labels:
+    app: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+      - name: backend
+        image: scientific-workflow-backend:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 3000
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: PORT
+          value: "3000"
+        - name: CORS_ORIGIN
+          value: "*"
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: backend-secrets
+              key: jwt-secret
+        - name: JWT_EXPIRES_IN
+          value: "1d"
+        - name: ARGO_BASE_URL
+          value: "http://argo-server:2746"
+        - name: ARGO_NAMESPACE
+          value: "scientific-workflow"
+        - name: MINIO_ENDPOINT
+          value: "minio"
+        - name: MINIO_PORT
+          value: "9000"
+        - name: MINIO_USE_SSL
+          value: "false"
+        - name: MINIO_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: minio-credentials
+              key: accesskey
+        - name: MINIO_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: minio-credentials
+              key: secretkey
+        - name: MINIO_DEFAULT_BUCKET
+          value: "workflow-outputs"
+        - name: REDIS_URL
+          value: "redis://redis:6379"
+        - name: MONGODB_URI
+          value: "mongodb://mongo:27017/scientific-workflow"
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 30
+        resources:
+          limits:
+            memory: 512Mi
+            cpu: 500m
+          requests:
+            memory: 256Mi
+            cpu: 100m
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  namespace: scientific-workflow
+spec:
+  type: NodePort
+  ports:
+  - port: 3000
+    targetPort: 3000
+    nodePort: 30083
+  selector:
+    app: backend
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: backend-secrets
+  namespace: scientific-workflow
+type: Opaque
+stringData:
+  jwt-secret: "your-secret-key-change-in-production"
