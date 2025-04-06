@@ -28,10 +28,6 @@ module.exports = {
     broker: process.env.KAFKA_BROKER || 'kafka:9092'
   },
   
-  redis: {
-    url: process.env.REDIS_URL || 'redis://redis:6379'
-  },
-  
   mongodb: {
     uri: process.env.MONGODB_URI || 'mongodb://localhost:27017/scientific-workflow'
   }
