@@ -1,0 +1,27 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: minio-create-buckets
+  namespace: scientific-workflow
+spec:
+  ttlSecondsAfterFinished: 100
+  template:
+    spec:
+      containers:
+      - name: mc
+        image: minio/mc:latest
+        command: ["/bin/sh", "-c"]
+        args:
+        - |
+          # Wait for MinIO to be available
+          until mc alias set myminio http://minio:9000 minioadmin minioadmin; do
+            echo "Waiting for MinIO to be available..."
+            sleep 5
+          done
+          mc mb --ignore-existing myminio/workflow-artifacts;
+          mc mb --ignore-existing myminio/workflow-inputs;
+          mc mb --ignore-existing myminio/workflow-outputs;
+          mc admin user add myminio workflow-user workflow-password;
+          mc admin policy attach myminio readwrite --user workflow-user;
+      restartPolicy: Never
+  backoffLimit: 2
