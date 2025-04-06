@@ -48,10 +48,15 @@ echo "Installing Argo Workflows..."
 chmod +x ./infrastructure/argo/install.sh
 ./infrastructure/argo/install.sh
 
-# Install Redis
-echo "Installing Redis..."
-chmod +x ./infrastructure/redis/install.sh
-./infrastructure/redis/install.sh
+# Install Kafka
+echo "Installing Kafka..."
+chmod +x ./infrastructure/kafka/install.sh
+./infrastructure/kafka/install.sh
+
+# Install Kafdrop
+echo "Installing Kafdrop..."
+chmod +x ./infrastructure/kafdrop/install.sh
+./infrastructure/kafdrop/install.sh
 
 # Install MongoDB
 echo "Installing MongoDB..."
@@ -82,6 +87,7 @@ echo "Access the following services:"
 echo "Argo Workflows UI:       http://localhost:2746"
 echo "Kubernetes Dashboard:    https://localhost:30081 (Access with token printed above)"
 echo "Minio Console:           http://localhost:30082 (minioadmin/minioadmin)"
+echo "Kaftdrop"                http://localhost:9000/"
 echo "Scientific Workflow API: http://localhost:30083"
 echo "Scientific Workflow UI:  http://localhost:30084"
 echo
