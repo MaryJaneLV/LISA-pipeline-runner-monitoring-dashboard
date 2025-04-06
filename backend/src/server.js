@@ -4,11 +4,13 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const http = require('http');
 const socketIo = require('socket.io');
-const { createClient } = require('redis');
 const winston = require('winston');
 const path = require('path');
 const passport = require('passport');
 const mongoose = require('mongoose');
+
+// Import services
+const kafkaService = require('./services/kafka.service');
 
 // Import routes
 const authRoutes = require('./routes/auth.routes');
@@ -56,34 +58,24 @@ mongoose.connect(config.mongodb.uri, {
   logger.error('MongoDB connection error:', err);
 });
 
-// Initialize Redis client
-const redisClient = createClient({
-  url: config.redis.url
-});
-
-redisClient.on('error', (err) => {
-  logger.error('Redis Client Error', err);
-});
-
-// Connect to Redis
+// Connect to Kafka and subscribe to workflow status updates
 (async () => {
-  await redisClient.connect();
-  logger.info('Connected to Redis');
-  
-  // Subscribe to workflow status updates
-  const subscriber = redisClient.duplicate();
-  await subscriber.connect();
-  
-  await subscriber.subscribe('workflow:status', (message) => {
-    logger.info(`Received workflow status update: ${message}`);
-    io.emit('workflow:status', JSON.parse(message));
-  });
-  
-  logger.info('Subscribed to workflow:status channel');
-})().catch(err => {
-  logger.error('Failed to connect to Redis', err);
-  process.exit(1);
-});
+  try {
+    await kafkaService.connect();
+    logger.info('Connected to Kafka');
+    
+    // Subscribe to workflow status updates
+    await kafkaService.subscribeToWorkflowStatus((data) => {
+      logger.info(`Received workflow status update: ${JSON.stringify(data)}`);
+      io.emit('workflow:status', data);
+    });
+    
+    logger.info('Subscribed to workflow.status topic');
+  } catch (err) {
+    logger.error('Failed to connect to Kafka', err);
+    process.exit(1);
+  }
+})();
 
 // Apply middlewares
 app.use(cors({
@@ -102,12 +94,6 @@ app.use(express.urlencoded({ extended: true }));
 // Initialize Passport
 setupPassport();
 app.use(passport.initialize());
-
-// Make redisClient available in the request object
-app.use((req, res, next) => {
-  req.redisClient = redisClient;
-  next();
-});
 
 // Set up routes
 app.use('/api/auth', authRoutes);
@@ -150,9 +136,9 @@ server.listen(PORT, () => {
 process.on('SIGTERM', () => {
   logger.info('SIGTERM received, shutting down gracefully');
   
-  server.close(() => {
+  server.close(async () => {
     logger.info('HTTP server closed');
-    redisClient.quit();
+    await kafkaService.disconnect();
     process.exit(0);
   });
 });

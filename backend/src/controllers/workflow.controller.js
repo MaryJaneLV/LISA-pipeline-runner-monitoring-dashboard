@@ -1,7 +1,7 @@
 const Workflow = require('../models/workflow.model');
 const Template = require('../models/template.model');
 const argoService = require('../services/argo.service');
-const redisService = require('../services/redis.service');
+const kafkaService = require('../services/kafka.service');
 const createError = require('http-errors');
 
 /**
@@ -152,7 +152,7 @@ exports.createWorkflow = async (req, res, next) => {
     await workflow.save();
     
     // Publish workflow creation event
-    await redisService.publishWorkflowStatus({
+    await kafkaService.publishWorkflowStatus({
       id: workflow._id.toString(),
       argoWorkflowName: workflow.argoWorkflowName,
       status: workflow.status,
@@ -200,7 +200,7 @@ exports.terminateWorkflow = async (req, res, next) => {
     await workflow.save();
     
     // Publish workflow termination event
-    await redisService.publishWorkflowStatus({
+    await kafkaService.publishWorkflowStatus({
       id: workflow._id.toString(),
       argoWorkflowName: workflow.argoWorkflowName,
       status: workflow.status,
@@ -292,7 +292,7 @@ exports.resubmitWorkflow = async (req, res, next) => {
     await workflow.save();
     
     // Publish workflow creation event
-    await redisService.publishWorkflowStatus({
+    await kafkaService.publishWorkflowStatus({
       id: workflow._id.toString(),
       argoWorkflowName: workflow.argoWorkflowName,
       status: workflow.status,
@@ -345,7 +345,7 @@ exports.deleteWorkflow = async (req, res, next) => {
     await workflow.deleteOne();
     
     // Publish workflow deletion event
-    await redisService.publishWorkflowStatus({
+    await kafkaService.publishWorkflowStatus({
       id: workflow._id.toString(),
       argoWorkflowName: workflow.argoWorkflowName,
       status: 'Deleted',

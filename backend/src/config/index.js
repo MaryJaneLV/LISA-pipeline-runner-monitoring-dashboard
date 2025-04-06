@@ -24,6 +24,10 @@ module.exports = {
     defaultBucket: process.env.MINIO_DEFAULT_BUCKET || 'workflow-outputs'
   },
   
+  kafka: {
+    broker: process.env.KAFKA_BROKER || 'kafka:9092'
+  },
+  
   redis: {
     url: process.env.REDIS_URL || 'redis://redis:6379'
   },
