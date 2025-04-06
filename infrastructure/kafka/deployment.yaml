@@ -45,6 +45,8 @@ spec:
           value: "localhost:2181"
         - name: ALLOW_PLAINTEXT_LISTENER
           value: "yes"
+        - name: KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE
+          value: "true"
         resources:
           limits:
             memory: 1Gi
