@@ -33,11 +33,6 @@ docker build -t scientific-workflow-frontend:latest ./frontend
 kind load docker-image scientific-workflow-backend:latest --name scientific-workflow
 kind load docker-image scientific-workflow-frontend:latest --name scientific-workflow
 
-# Install Argo Workflows
-echo "Installing Argo Workflows..."
-chmod +x ./infrastructure/argo/install.sh
-./infrastructure/argo/install.sh
-
 # Install Kubernetes Dashboard
 echo "Installing Kubernetes Dashboard..."
 chmod +x ./infrastructure/dashboard/install.sh
@@ -47,6 +42,11 @@ chmod +x ./infrastructure/dashboard/install.sh
 echo "Installing Minio..."
 chmod +x ./infrastructure/minio/install.sh
 ./infrastructure/minio/install.sh
+
+# Install Argo Workflows
+echo "Installing Argo Workflows..."
+chmod +x ./infrastructure/argo/install.sh
+./infrastructure/argo/install.sh
 
 # Install Redis
 echo "Installing Redis..."

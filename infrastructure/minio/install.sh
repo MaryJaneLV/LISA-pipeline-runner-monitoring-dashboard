@@ -13,6 +13,10 @@ kubectl -n scientific-workflow rollout status deployment/minio --timeout=120s
 # Apply the bucket creation job
 kubectl apply -f ./infrastructure/minio/create-buckets.yaml
 
+# Create ConfigMap for artifact repository
+kubectl apply -f ./infrastructure/minio/minio-credentials.yaml
+kubectl apply -f ./infrastructure/minio/artifact-repositories.yaml
+
 echo "Minio installation completed!"
 echo "Access Minio Console at: http://localhost:30082"
 echo "Username: minioadmin"
