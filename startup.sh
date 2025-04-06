@@ -79,8 +79,6 @@ echo "Waiting for all services to be ready..."
 kubectl wait --for=condition=ready pod -l app=backend -n scientific-workflow --timeout=300s
 kubectl wait --for=condition=ready pod -l app=frontend -n scientific-workflow --timeout=300s
 
-nohup kubectl -n scientific-workflow port-forward svc/argo-server 2746:2746 &
-
 echo "Scientific Workflow Pipeline Runner is now running!"
 echo
 echo "Access the following services:"
