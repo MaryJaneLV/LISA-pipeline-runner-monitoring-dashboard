@@ -27,34 +27,12 @@ else
   echo "Helm already installed"
 fi
 
-# Create Kind configuration
-cat > kind-config.yaml << EOF
-kind: Cluster
-apiVersion: kind.x-k8s.io/v1alpha4
-nodes:
-- role: control-plane
-  extraPortMappings:
-  - containerPort: 30080 # Argo UI
-    hostPort: 30080
-  - containerPort: 30081 # Kubernetes Dashboard
-    hostPort: 30081
-  - containerPort: 30082 # Minio Console
-    hostPort: 30082
-  - containerPort: 30083 # Backend API
-    hostPort: 30083
-  - containerPort: 30084 # Frontend
-    hostPort: 30084
-  extraMounts:
-  - hostPath: ./data
-    containerPath: /data
-EOF
-
 # Create data directory for persistent storage
 mkdir -p data
 
 # Create Kind cluster
 echo "Creating Kind cluster..."
-kind create cluster --name scientific-workflow --config kind-config.yaml
+kind create cluster --name scientific-workflow --config ./infrastructure/kind/config.yaml
 
 # Create namespace
 echo "Creating namespace..."

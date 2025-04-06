@@ -3,18 +3,13 @@ set -e
 
 echo "Installing Argo Workflows..."
 
-
-echo "Modifying manifest to use scientific-workflow namespace..."
-# Replace namespace in the manifest (macOS compatible)
-sed -i '' 's/namespace: argo/namespace: scientific-workflow/g' infrastructure/argo/argo-install.yaml
-
 # Apply the modified manifest
 echo "Applying Argo Workflows manifest..."
-kubectl apply -f infrastructure/argo/argo-install.yaml
+kubectl apply -f infrastructure/argo/install.yaml
 
 
 
-kubectl patch svc argo-server -n scientific-workflow --patch "$(cat argo-server-patch.yaml)"
+kubectl patch svc argo-server -n scientific-workflow --patch "$(cat ./infrastructure/argo/server-patch.yaml)"
 
 # Create ConfigMap for artifact repository
 echo "Creating artifact repository configuration..."

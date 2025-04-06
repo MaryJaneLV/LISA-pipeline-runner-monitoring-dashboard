@@ -53,13 +53,10 @@ echo "Installing Redis..."
 chmod +x ./infrastructure/redis/install.sh
 ./infrastructure/redis/install.sh
 
-# Setup MongoDB
-echo "Setting up MongoDB..."
-kubectl apply -f ./kubernetes/mongo/deployment.yaml
-
-# Wait for MongoDB to be ready
-echo "Waiting for MongoDB to be ready..."
-kubectl wait --for=condition=ready pod -l app=mongo -n scientific-workflow --timeout=300s
+# Install MongoDB
+echo "Installing MongoDB..."
+chmod +x ./infrastructure/mongo/install.sh
+./infrastructure/mongo/install.sh
 
 # Apply sample workflow template
 echo "Applying sample workflow template..."
@@ -67,11 +64,11 @@ kubectl apply -f ./workflows/data-processing-workflow.yaml
 
 # Deploy backend
 echo "Deploying backend..."
-kubectl apply -f ./kubernetes/backend/deployment.yaml
+kubectl apply -f ./infrastructure/backend/deployment.yaml
 
 # Deploy frontend
 echo "Deploying frontend..."
-kubectl apply -f ./kubernetes/frontend/deployment.yaml
+kubectl apply -f ./infrastructure/frontend/deployment.yaml
 
 echo "Waiting for all services to be ready..."
 kubectl wait --for=condition=ready pod -l app=backend -n scientific-workflow --timeout=300s
