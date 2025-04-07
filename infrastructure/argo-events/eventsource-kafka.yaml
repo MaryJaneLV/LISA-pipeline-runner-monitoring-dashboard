@@ -1,0 +1,47 @@
+apiVersion: argoproj.io/v1alpha1
+kind: EventSource
+metadata:
+  name: kafka-source
+  namespace: scientific-workflow
+spec:
+  template:
+    serviceAccountName: argo-events-sa
+  # Listen to Argo Workflow events via K8s Events
+  resource:
+    workflow-events:
+      # Watch for workflow events
+      namespace: scientific-workflow
+      group: argoproj.io
+      version: v1alpha1
+      resource: workflows
+      eventTypes:
+        - ADD
+        - UPDATE
+        - DELETE
+      # The filter needs to be an array of selectors, not an object
+      filter:
+        labels: []  # Empty array to watch all workflows
+      metadata:
+        type: "workflow-events"
+  
+  # Listen for incoming events from Kafka
+  kafka:
+    workflow-triggers:
+      url: "kafka.scientific-workflow.svc:9092"
+      topic: "workflow-triggers"  # This topic will be used to trigger workflows
+      partition: "0"  # Must be a string for EventSource
+      connectionBackoff:
+        duration: 10s
+        steps: 5
+        factor: 2.0
+        jitter: 0.1
+      consumer:
+        groupName: "workflow-triggers-consumer-group"
+        oldest: true
+        rebalanceStrategy: "range"
+      jsonBody: true
+      metadata:
+        source: "workflow-triggers"
+  
+  # Specify the event bus to use
+  eventBusName: kafka-eventbus

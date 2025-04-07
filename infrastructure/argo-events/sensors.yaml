@@ -1,0 +1,94 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Sensor
+metadata:
+  name: workflow-events-kafka-sensor
+  namespace: scientific-workflow
+spec:
+  template:
+    serviceAccountName: argo-events-sa
+  dependencies:
+    - name: workflow-events
+      eventSourceName: kafka-source
+      eventName: workflow-events
+  triggers:
+    - template:
+        name: kafka-workflow-events
+        kafka:
+          # The URL of the Kafka broker
+          url: kafka.scientific-workflow.svc:9092
+          # The topic to publish to
+          topic: workflow-status
+          # Partition to publish to - must be an integer for Sensor
+          partition: 0
+          # The message payload
+          payload:
+            - src:
+                dependencyName: workflow-events
+                dataKey: body
+              dest: body
+          parameters:
+            - src:
+                dependencyName: workflow-events
+                dataKey: body.object.metadata.name
+              dest: header.X-Workflow-Name
+            - src:
+                dependencyName: workflow-events
+                dataKey: body.object.status.phase
+              dest: header.X-Workflow-Phase
+            - src:
+                dependencyName: workflow-events
+                dataKey: body.object.metadata.uid
+              dest: header.X-Workflow-UID
+  eventBusName: kafka-eventbus
+
+---
+
+apiVersion: argoproj.io/v1alpha1
+kind: Sensor
+metadata:
+  name: kafka-workflow-trigger-sensor
+  namespace: scientific-workflow
+spec:
+  template:
+    serviceAccountName: argo-events-sa
+  dependencies:
+    - name: workflow-trigger
+      eventSourceName: kafka-source
+      eventName: workflow-triggers
+  triggers:
+    - template:
+        name: workflow-trigger
+        argoWorkflow:
+          operation: submit
+          source:
+            resource:
+              apiVersion: argoproj.io/v1alpha1
+              kind: Workflow
+              metadata:
+                generateName: kafka-triggered-
+              spec:
+                entrypoint: main
+                arguments:
+                  parameters:
+                    - name: message
+                      # Extract message parameter from the event payload
+                      value: "{{ .Input.body.message }}"
+                templates:
+                  - name: main
+                    inputs:
+                      parameters:
+                        - name: message
+                    container:
+                      image: alpine:3.14
+                      command: ["/bin/sh", "-c"]
+                      args: ["echo 'Received message: {{ inputs.parameters.message }}'; sleep 10"]
+          parameters:
+            - src:
+                dependencyName: workflow-trigger
+                dataKey: body
+              dest: spec.arguments.parameters.0.value
+            - src:
+                dependencyName: workflow-trigger
+                dataTemplate: "{{ .Input.body.workflow_name | default \"kafka-triggered-\" }}"
+              dest: metadata.generateName
+  eventBusName: kafka-eventbus

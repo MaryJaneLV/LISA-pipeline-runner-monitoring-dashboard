@@ -25,6 +25,8 @@ spec:
               value: "kafka:9092"
             - name: JVM_OPTS
               value: "-Xms32M -Xmx128M"
+            - name: SERVER_PORT
+              value: "9000"
           resources:
             limits:
               memory: 256Mi
