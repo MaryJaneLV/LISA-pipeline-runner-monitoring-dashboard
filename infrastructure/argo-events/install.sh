@@ -29,12 +29,10 @@ kubectl apply -f infrastructure/argo-events/sensors.yaml
 echo "Created Sensors"
 
 echo "Argo Events installation complete!"
-echo "To verify, check the status of the resources:"
-echo "kubectl get eventbus,eventsources,sensors -n scientific-workflow"
-echo ""
+
 echo "To watch for workflow events being published to Kafka:"
 echo "kubectl run kafka-consumer -it --rm --image=bitnami/kafka:3.4 -- kafka-console-consumer.sh --bootstrap-server kafka.scientific-workflow.svc:9092 --topic workflow-status --from-beginning"
 echo ""
 echo "To trigger a workflow via Kafka:"
-echo "kubectl run kafka-producer -it --rm --image=bitnami/kafka:3.4 -- kafka-console-producer.sh --broker-list kafka.scientific-workflow.svc:9092 --topic workflow-triggers"
-echo "Then enter a JSON message like: {\"message\": \"Run my workflow\", \"workflow_name\": \"my-workflow-\"}"
+echo "From the Kafka topic workflow-trigger, publish a message with the following format:"
+echo "{\"message\": \"Run my workflow\", \"workflow_name\": \"hello-world-k4f6h\"}"
