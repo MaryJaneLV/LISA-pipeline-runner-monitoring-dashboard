@@ -63,6 +63,11 @@ echo "Installing MongoDB..."
 chmod +x ./infrastructure/mongo/install.sh
 ./infrastructure/mongo/install.sh
 
+# Install Argo Events
+echo "Installing Mongo Express..."
+chmod +x ./infrastructure/mongo-express/install.sh
+./infrastructure/mongo-express/install.sh
+
 # Apply sample workflow template
 echo "Applying sample workflow template..."
 kubectl apply -f ./workflows/data-processing-workflow.yaml
@@ -79,8 +84,14 @@ echo "Waiting for all services to be ready..."
 kubectl wait --for=condition=ready pod -l app=backend -n scientific-workflow --timeout=300s
 kubectl wait --for=condition=ready pod -l app=frontend -n scientific-workflow --timeout=300s
 
+# Install Argo Events
+echo "Installing Argo Events..."
+chmod +x ./infrastructure/argo-events/install.sh
+./infrastructure/argo-events/install.sh
+
 nohup kubectl -n scientific-workflow port-forward svc/argo-server 2746:2746 &
 nohup kubectl -n scientific-workflow port-forward svc/kafdrop 9032:9000 &
+nohup kubectl -n scientific-workflow port-forward svc/mongo-express 9087:8081 &
 
 echo "Scientific Workflow Pipeline Runner is now running!"
 echo
@@ -88,6 +99,7 @@ echo "Access the following services:"
 echo "Argo Workflows UI:       http://localhost:2746"
 echo "Kubernetes Dashboard:    https://localhost:30081 (Access with token printed above)"
 echo "Minio Console:           http://localhost:30082 (minioadmin/minioadmin)"
+echo "Mongo Express:           http://localhost:9087"
 echo "Kaftdrop                 http://localhost:9032"
 echo "Scientific Workflow API: http://localhost:30083"
 echo "Scientific Workflow UI:  http://localhost:30084"
