@@ -29,15 +29,15 @@ spec:
           parameters:
             - src:
                 dependencyName: workflow-events
-                dataKey: body.object.metadata.name
+                dataTemplate: "{{ .Input.body.metadata.name | default \"unknown\" }}"
               dest: header.X-Workflow-Name
             - src:
                 dependencyName: workflow-events
-                dataKey: body.object.status.phase
+                dataTemplate: "{{ .Input.body.status.phase | default \"unknown\" }}"
               dest: header.X-Workflow-Phase
             - src:
                 dependencyName: workflow-events
-                dataKey: body.object.metadata.uid
+                dataTemplate: "{{ .Input.body.metadata.uid | default \"unknown\" }}"
               dest: header.X-Workflow-UID
   eventBusName: kafka-eventbus
 

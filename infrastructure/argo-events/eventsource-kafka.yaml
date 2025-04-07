@@ -23,6 +23,7 @@ spec:
         labels: []  # Empty array to watch all workflows
       metadata:
         type: "workflow-events"
+      controller: true
   
   # Listen for incoming events from Kafka
   kafka:
