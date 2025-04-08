@@ -126,6 +126,36 @@ class ArgoService {
   }
 
   /**
+   * Suspend a running workflow
+   * @param {String} name - The workflow name
+   * @param {String} namespace - The namespace (optional)
+   * @returns {Promise<Object>} - The result
+   */
+  async suspendWorkflow(name, namespace = config.argo.namespace) {
+    try {
+      const response = await this.client.put(`/api/v1/workflows/${namespace}/${name}/suspend`);
+      return response.data;
+    } catch (error) {
+      this._handleError(error);
+    }
+  }
+
+  /**
+   * Resume a suspended workflow
+   * @param {String} name - The workflow name
+   * @param {String} namespace - The namespace (optional)
+   * @returns {Promise<Object>} - The result
+   */
+  async resumeWorkflow(name, namespace = config.argo.namespace) {
+    try {
+      const response = await this.client.put(`/api/v1/workflows/${namespace}/${name}/resume`);
+      return response.data;
+    } catch (error) {
+      this._handleError(error);
+    }
+  }
+
+  /**
    * Resubmit a workflow
    * @param {String} name - The workflow name
    * @param {String} namespace - The namespace (optional)

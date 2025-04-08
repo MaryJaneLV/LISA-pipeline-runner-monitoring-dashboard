@@ -374,3 +374,79 @@ exports.getWorkflowLogs = async (req, res, next) => {
     next(error);
   }
 };
+
+/**
+ * Suspend a workflow
+ * @param {Object} req - The request object
+ * @param {Object} res - The response object
+ * @param {Function} next - The next middleware
+ */
+exports.suspendWorkflow = async (req, res, next) => {
+  try {
+    const workflow = await Workflow.findOne({
+      _id: req.params.id,
+      createdBy: req.user._id
+    });
+    
+    if (!workflow) {
+      return next(createError(404, 'Workflow not found'));
+    }
+    
+    // Only allow suspending running workflows
+    if (workflow.status !== 'Running') {
+      return next(createError(400, 'Only running workflows can be suspended'));
+    }
+    
+    // Suspend in Argo
+    await argoService.suspendWorkflow(workflow.argoWorkflowName);
+    
+    // Update status
+    workflow.status = 'Suspended';
+    await workflow.save();
+    
+    res.json({
+      message: 'Workflow suspended successfully',
+      workflow
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Resume a workflow
+ * @param {Object} req - The request object
+ * @param {Object} res - The response object
+ * @param {Function} next - The next middleware
+ */
+exports.resumeWorkflow = async (req, res, next) => {
+  try {
+    const workflow = await Workflow.findOne({
+      _id: req.params.id,
+      createdBy: req.user._id
+    });
+    
+    if (!workflow) {
+      return next(createError(404, 'Workflow not found'));
+    }
+    
+    // Only allow resuming suspended workflows
+    if (workflow.status !== 'Suspended') {
+      return next(createError(400, 'Only suspended workflows can be resumed'));
+    }
+    
+    // Resume in Argo
+    await argoService.resumeWorkflow(workflow.argoWorkflowName);
+    
+    // Update status
+    workflow.status = 'Running';
+    await workflow.save();
+    
+    res.json({
+      message: 'Workflow resumed successfully',
+      workflow
+    });
+  } catch (error) {
+    next(error);
+  }
+};

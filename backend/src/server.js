@@ -8,6 +8,8 @@ const winston = require('winston');
 const path = require('path');
 const passport = require('passport');
 const mongoose = require('mongoose');
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpecs = require('./config/swagger');
 
 // Import services
 const kafkaService = require('./services/kafka.service');
@@ -99,6 +101,13 @@ app.use('/api/auth', authRoutes);
 app.use('/api/workflows', workflowRoutes);
 app.use('/api/templates', templateRoutes);
 app.use('/api/storage', storageRoutes);
+
+// Swagger UI
+app.use('/', swaggerUi.serve, swaggerUi.setup(swaggerSpecs, {
+  explorer: true,
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: "Scientific Workflow API Documentation"
+}));
 
 // Health check endpoint
 app.get('/health', (req, res) => {
