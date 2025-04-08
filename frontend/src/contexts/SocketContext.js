@@ -43,6 +43,23 @@ export const SocketProvider = ({ children }) => {
       socketInstance.on('workflow:status', (data) => {
         console.log('Workflow status update:', data);
         setWorkflowUpdates(prev => [data, ...prev].slice(0, 10)); // Keep last 10 updates
+        
+        // Trigger a custom event with the workflow data
+        // This will allow components to listen for status updates for specific workflows
+        if (data && data.metadata && data.metadata.name) {
+          const customEvent = new CustomEvent('workflow:status:' + data.metadata.name, { 
+            detail: data 
+          });
+          window.dispatchEvent(customEvent);
+          
+          // If we have the workflow data from the backend, dispatch another event with it
+          if (data.workflowData) {
+            const workflowEvent = new CustomEvent('workflow:updated', { 
+              detail: data.workflowData 
+            });
+            window.dispatchEvent(workflowEvent);
+          }
+        }
       });
 
       socketInstance.on('connect_error', (err) => {

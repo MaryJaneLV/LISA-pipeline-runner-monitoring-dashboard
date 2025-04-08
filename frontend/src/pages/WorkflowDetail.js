@@ -10,9 +10,11 @@ import {
   Chip,
   CircularProgress,
   Divider,
+  FormControlLabel,
   Grid,
   Link,
   Paper,
+  Switch,
   Tab,
   Tabs,
   Typography,
@@ -26,6 +28,7 @@ import {
 } from '@mui/icons-material';
 import WorkflowService from '../services/workflow.service';
 import { useNotification } from '../contexts/NotificationContext';
+import { useSocket } from '../contexts/SocketContext';
 
 function TabPanel(props) {
   const { children, value, index, ...other } = props;
@@ -47,11 +50,13 @@ function WorkflowDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { showSuccess, showError } = useNotification();
+  const { connected } = useSocket();
 
   const [workflow, setWorkflow] = useState(null);
   const [argoWorkflow, setArgoWorkflow] = useState(null);
   const [loading, setLoading] = useState(true);
   const [tabValue, setTabValue] = useState(0);
+  const [realtimeEnabled, setRealtimeEnabled] = useState(true);
 
   const fetchWorkflow = async () => {
     setLoading(true);
@@ -71,6 +76,69 @@ function WorkflowDetail() {
     fetchWorkflow();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+  
+  // Listen for real-time workflow updates
+  useEffect(() => {
+    if (!workflow || !realtimeEnabled) return;
+    
+    // Event handler for direct workflow data updates
+    const handleWorkflowUpdate = (event) => {
+      const updatedWorkflow = event.detail;
+      
+      // Only update if it's our workflow
+      if (updatedWorkflow && updatedWorkflow._id === id) {
+        console.log('Received workflow update from backend:', updatedWorkflow);
+        
+        // Show notification if status changed
+        if (workflow && workflow.status !== updatedWorkflow.status) {
+          showSuccess(`Workflow status changed to ${updatedWorkflow.status}`);
+        }
+        
+        setWorkflow(updatedWorkflow);
+      }
+    };
+    
+    // Event handler for Argo workflow status updates
+    const handleArgoWorkflowUpdate = (event) => {
+      const data = event.detail;
+      
+      // Only update if it matches our workflow's Argo name
+      if (data && workflow && data.metadata?.name === workflow.argoWorkflowName) {
+        console.log('Received Argo workflow update:', data);
+        setArgoWorkflow(data);
+        
+        // If the data contains our workflow data, update it
+        if (data.workflowData && data.workflowData._id === id) {
+          setWorkflow(data.workflowData);
+        } else {
+          // If we just got an update but no workflow data, refresh to get latest
+          fetchWorkflow();
+        }
+      }
+    };
+    
+    // Add event listeners
+    window.addEventListener('workflow:updated', handleWorkflowUpdate);
+    
+    if (workflow && workflow.argoWorkflowName) {
+      window.addEventListener(
+        `workflow:status:${workflow.argoWorkflowName}`,
+        handleArgoWorkflowUpdate
+      );
+    }
+    
+    // Clean up listeners on unmount
+    return () => {
+      window.removeEventListener('workflow:updated', handleWorkflowUpdate);
+      
+      if (workflow && workflow.argoWorkflowName) {
+        window.removeEventListener(
+          `workflow:status:${workflow.argoWorkflowName}`,
+          handleArgoWorkflowUpdate
+        );
+      }
+    };
+  }, [id, workflow, realtimeEnabled]);
 
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
@@ -155,6 +223,17 @@ function WorkflowDetail() {
           Back to Workflows
         </Button>
         <Box>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={realtimeEnabled}
+                onChange={(e) => setRealtimeEnabled(e.target.checked)}
+                color="primary"
+              />
+            }
+            label="Real-time updates"
+            sx={{ mr: 2 }}
+          />
           <Button
             variant="outlined"
             startIcon={<RefreshIcon />}

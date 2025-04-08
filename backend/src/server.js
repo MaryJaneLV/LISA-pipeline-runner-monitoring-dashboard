@@ -20,6 +20,9 @@ const workflowRoutes = require('./routes/workflow.routes');
 const templateRoutes = require('./routes/template.routes');
 const storageRoutes = require('./routes/storage.routes');
 
+// Import controllers
+const workflowController = require('./controllers/workflow.controller');
+
 // Import config
 const config = require('./config');
 const { setupPassport } = require('./config/passport');
@@ -67,8 +70,24 @@ mongoose.connect(config.mongodb.uri, {
     logger.info('Connected to Kafka');
     
     // Subscribe to workflow status updates
-    await kafkaService.subscribeToWorkflowStatus((data) => {
-      io.emit('workflow:status', data);
+    await kafkaService.subscribeToWorkflowStatus(async (data) => {
+      try {
+        // Update workflow status in database
+        const updatedWorkflow = await workflowController.updateWorkflowStatus(data);
+        
+        // If workflow was updated, add it to the data we send to the client
+        if (updatedWorkflow) {
+          // Convert to plain object and add to data
+          const workflowData = updatedWorkflow.toObject();
+          data.workflowData = workflowData;
+        }
+        
+        // Emit to all connected clients
+        io.emit('workflow:status', data);
+        logger.info(`Emitted workflow status update for ${data.metadata?.name}`);
+      } catch (error) {
+        logger.error('Error handling workflow status update:', error);
+      }
     });
     
     logger.info('Subscribed to workflow-status-raw topic');

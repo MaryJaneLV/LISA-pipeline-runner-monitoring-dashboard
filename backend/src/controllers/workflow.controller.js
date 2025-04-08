@@ -450,3 +450,82 @@ exports.resumeWorkflow = async (req, res, next) => {
     next(error);
   }
 };
+
+/**
+ * Update workflow status from an Argo workflow event
+ * @param {Object} argoWorkflow - The Argo workflow object from event
+ * @returns {Promise<Object|null>} - Updated workflow or null if not found
+ */
+exports.updateWorkflowStatus = async (argoWorkflow) => {
+  try {
+    if (!argoWorkflow || !argoWorkflow.metadata || !argoWorkflow.metadata.name) {
+      console.error('Invalid Argo workflow object received for status update');
+      return null;
+    }
+
+    const argoWorkflowName = argoWorkflow.metadata.name;
+    console.log(`[WorkflowController] Updating status for workflow: ${argoWorkflowName}`);
+
+    // Find the workflow in the database
+    const workflow = await Workflow.findOne({ argoWorkflowName });
+    
+    if (!workflow) {
+      console.error(`[WorkflowController] Workflow not found for Argo name: ${argoWorkflowName}`);
+      return null;
+    }
+
+    // Extract status from Argo workflow
+    const argoStatus = argoWorkflow.status?.phase;
+    let newStatus = workflow.status;
+
+    // Map Argo status to our status
+    if (argoStatus) {
+      switch (argoStatus) {
+        case 'Pending':
+          newStatus = 'Pending';
+          break;
+        case 'Running':
+          newStatus = 'Running';
+          break;
+        case 'Succeeded':
+          newStatus = 'Succeeded';
+          break;
+        case 'Failed':
+          newStatus = 'Failed';
+          break;
+        case 'Error':
+          newStatus = 'Failed';
+          break;
+        default:
+          console.log(`[WorkflowController] Unknown status: ${argoStatus}`);
+      }
+    }
+
+    // Update if status changed
+    if (workflow.status !== newStatus) {
+      console.log(`[WorkflowController] Updating workflow ${workflow._id} status from ${workflow.status} to ${newStatus}`);
+      
+      workflow.status = newStatus;
+      
+      // Update timestamps based on status
+      if (['Running'].includes(newStatus) && !workflow.startedAt) {
+        workflow.startedAt = new Date();
+      }
+      
+      if (['Succeeded', 'Failed', 'Terminated'].includes(newStatus) && !workflow.finishedAt) {
+        workflow.finishedAt = new Date();
+      }
+      
+      await workflow.save();
+      console.log(`[WorkflowController] Workflow ${workflow._id} status updated to ${newStatus}`);
+      
+      return workflow;
+    } else {
+      console.log(`[WorkflowController] No status change for workflow ${workflow._id}`);
+      return workflow;
+    }
+  } catch (error) {
+    console.error(`[WorkflowController] Error updating workflow status: ${error.message}`);
+    return null;
+  }
+};

@@ -6,8 +6,10 @@ import {
   Card,
   Chip,
   CircularProgress,
+  FormControlLabel,
   IconButton,
   Paper,
+  Switch,
   Table,
   TableBody,
   TableCell,
@@ -25,16 +27,19 @@ import {
 } from '@mui/icons-material';
 import WorkflowService from '../services/workflow.service';
 import { useNotification } from '../contexts/NotificationContext';
+import { useSocket } from '../contexts/SocketContext';
 
 function WorkflowList() {
   const navigate = useNavigate();
   const { showSuccess, showError } = useNotification();
+  const { connected } = useSocket();
   
   const [workflows, setWorkflows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [totalCount, setTotalCount] = useState(0);
+  const [realtimeEnabled, setRealtimeEnabled] = useState(true);
   
   const fetchWorkflows = async () => {
     setLoading(true);
@@ -58,6 +63,40 @@ function WorkflowList() {
     fetchWorkflows();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, rowsPerPage]);
+  
+  // Listen for workflow updates
+  useEffect(() => {
+    if (!realtimeEnabled) return;
+    
+    const handleWorkflowUpdate = (event) => {
+      const updatedWorkflow = event.detail;
+      
+      // Update the workflow list if we have the workflow in the current page
+      setWorkflows(currentWorkflows => {
+        const index = currentWorkflows.findIndex(w => w._id === updatedWorkflow._id);
+        
+        if (index !== -1) {
+          // Create a new array with the updated workflow
+          const newWorkflows = [...currentWorkflows];
+          newWorkflows[index] = {
+            ...newWorkflows[index],
+            ...updatedWorkflow
+          };
+          return newWorkflows;
+        }
+        
+        return currentWorkflows;
+      });
+    };
+    
+    // Add event listener
+    window.addEventListener('workflow:updated', handleWorkflowUpdate);
+    
+    // Clean up
+    return () => {
+      window.removeEventListener('workflow:updated', handleWorkflowUpdate);
+    };
+  }, [realtimeEnabled]);
   
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
@@ -107,7 +146,18 @@ function WorkflowList() {
         <Typography variant="h4" component="h1" gutterBottom>
           Workflows
         </Typography>
-        <Box>
+        <Box display="flex" alignItems="center">
+          <FormControlLabel
+            control={
+              <Switch
+                checked={realtimeEnabled}
+                onChange={(e) => setRealtimeEnabled(e.target.checked)}
+                color="primary"
+              />
+            }
+            label="Real-time updates"
+            sx={{ mr: 2 }}
+          />
           <Button
             variant="outlined"
             startIcon={<RefreshIcon />}
