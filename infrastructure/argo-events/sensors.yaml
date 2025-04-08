@@ -17,7 +17,7 @@ spec:
           # The URL of the Kafka broker
           url: kafka.scientific-workflow.svc:9092
           # The topic to publish to
-          topic: workflow-status
+          topic: workflow-status-raw
           # Partition to publish to - must be an integer for Sensor
           partition: 0
           # The message payload

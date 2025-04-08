@@ -38,23 +38,23 @@ class KafkaService {
   }
 
   /**
-   * Publish a workflow status update
+   * Publish a workflow submission
    * @param {Object} data - The workflow status data
    * @returns {Promise<void>}
    */
-  async publishWorkflowStatus(data) {
+  async publishWorkflowSubmission(data) {
     try {
       await this.ensureConnection();
       await this.producer.send({
-        topic: 'workflow.status',
+        topic: 'workflow-submission',
         messages: [
           { value: JSON.stringify(data) }
         ],
       });
-      console.log(`Published workflow status: ${JSON.stringify(data)}`);
+      console.log(`Submitted workflow: ${JSON.stringify(data)}`);
       return true;
     } catch (error) {
-      throw new Error(`Error publishing workflow status: ${error.message}`);
+      throw new Error(`Error submitting workflow: ${error.message}`);
     }
   }
 
@@ -87,12 +87,19 @@ class KafkaService {
    */
   async subscribeToWorkflowStatus(callback) {
     await this.consumer.connect();
-    await this.consumer.subscribe({ topic: 'workflow.status', fromBeginning: false });
+    await this.consumer.subscribe({ topic: 'workflow-status-raw', fromBeginning: false });
     
     await this.consumer.run({
       eachMessage: async ({ topic, partition, message }) => {
         try {
-          const data = JSON.parse(message.value.toString());
+          const data = JSON.parse(JSON.parse(message.value.toString())?.body);
+          await this.producer.send({
+            topic: 'workflow-status',
+            messages: [
+              { value: JSON.stringify(data) }
+            ],
+          });
+          console.log(`Published processed workflow status: ${JSON.stringify(data)}`);
           callback(data);
         } catch (error) {
           console.error(`Error processing Kafka message: ${error}`);
@@ -100,7 +107,7 @@ class KafkaService {
       },
     });
     
-    console.log('Subscribed to workflow.status topic');
+    console.log('Subscribed to workflow-status-raw topic');
   }
 
   /**

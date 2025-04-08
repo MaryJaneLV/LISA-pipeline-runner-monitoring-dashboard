@@ -66,11 +66,10 @@ mongoose.connect(config.mongodb.uri, {
     
     // Subscribe to workflow status updates
     await kafkaService.subscribeToWorkflowStatus((data) => {
-      logger.info(`Received workflow status update: ${JSON.stringify(data)}`);
       io.emit('workflow:status', data);
     });
     
-    logger.info('Subscribed to workflow.status topic');
+    logger.info('Subscribed to workflow-status-raw topic');
   } catch (err) {
     logger.error('Failed to connect to Kafka', err);
     process.exit(1);

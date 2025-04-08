@@ -31,7 +31,7 @@ echo "Created Sensors"
 echo "Argo Events installation complete!"
 
 echo "To watch for workflow events being published to Kafka:"
-echo "kubectl run kafka-consumer -it --rm --image=bitnami/kafka:3.4 -- kafka-console-consumer.sh --bootstrap-server kafka.scientific-workflow.svc:9092 --topic workflow-status --from-beginning"
+echo "kubectl run kafka-consumer -it --rm --image=bitnami/kafka:3.4 -- kafka-console-consumer.sh --bootstrap-server kafka.scientific-workflow.svc:9092 --topic workflow-status-raw --from-beginning"
 echo ""
 echo "To trigger a workflow via Kafka:"
 echo "From the Kafka topic workflow-trigger, publish a message with the following format:"

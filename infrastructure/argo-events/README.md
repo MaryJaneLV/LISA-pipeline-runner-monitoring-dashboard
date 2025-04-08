@@ -6,7 +6,7 @@ This directory contains configuration files to set up Argo Events to work with K
 
 The setup establishes a bidirectional integration between Argo Workflows and Kafka:
 
-1. **Workflow Events to Kafka**: Any change to Argo Workflows (creation, updates, completion) is automatically detected and published to a Kafka topic (`workflow-status`).
+1. **Workflow Events to Kafka**: Any change to Argo Workflows (creation, updates, completion) is automatically detected and published to a Kafka topic (`workflow-status-raw`).
 
 2. **Kafka to Workflow Triggers**: Messages sent to a specific Kafka topic (`workflow-triggers`) can automatically trigger new Argo Workflows.
 
@@ -40,12 +40,12 @@ Run the install script to set up all the components:
 
 ### Watching Workflow Events in Kafka
 
-Workflow status events are automatically published to the `workflow-status` Kafka topic. To watch these events:
+Workflow status events are automatically published to the `workflow-status-raw` Kafka topic. To watch these events:
 
 ```bash
 kubectl run kafka-consumer -it --rm --image=bitnami/kafka:3.4 -- \
 kafka-console-consumer.sh --bootstrap-server kafka.scientific-workflow.svc:9092 \
---topic workflow-status --from-beginning
+--topic workflow-status-raw --from-beginning
 ```
 
 You'll see JSON messages containing workflow status information whenever a workflow is created, updated, or completed.

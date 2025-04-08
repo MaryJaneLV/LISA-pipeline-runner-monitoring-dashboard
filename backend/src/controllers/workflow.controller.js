@@ -152,11 +152,9 @@ exports.createWorkflow = async (req, res, next) => {
     await workflow.save();
     
     // Publish workflow creation event
-    await kafkaService.publishWorkflowStatus({
+    await kafkaService.publishWorkflowSubmission({
       id: workflow._id.toString(),
       argoWorkflowName: workflow.argoWorkflowName,
-      status: workflow.status,
-      event: 'created'
     });
     
     res.status(201).json({
@@ -198,14 +196,6 @@ exports.terminateWorkflow = async (req, res, next) => {
     workflow.status = 'Terminated';
     workflow.finishedAt = new Date();
     await workflow.save();
-    
-    // Publish workflow termination event
-    await kafkaService.publishWorkflowStatus({
-      id: workflow._id.toString(),
-      argoWorkflowName: workflow.argoWorkflowName,
-      status: workflow.status,
-      event: 'terminated'
-    });
     
     res.json({
       message: 'Workflow terminated successfully',
@@ -292,11 +282,9 @@ exports.resubmitWorkflow = async (req, res, next) => {
     await workflow.save();
     
     // Publish workflow creation event
-    await kafkaService.publishWorkflowStatus({
+    await kafkaService.publishWorkflowSubmission({
       id: workflow._id.toString(),
       argoWorkflowName: workflow.argoWorkflowName,
-      status: workflow.status,
-      event: 'created'
     });
     
     res.status(201).json({
@@ -343,14 +331,6 @@ exports.deleteWorkflow = async (req, res, next) => {
     
     // Delete from DB
     await workflow.deleteOne();
-    
-    // Publish workflow deletion event
-    await kafkaService.publishWorkflowStatus({
-      id: workflow._id.toString(),
-      argoWorkflowName: workflow.argoWorkflowName,
-      status: 'Deleted',
-      event: 'deleted'
-    });
     
     res.json({
       message: 'Workflow deleted successfully'
