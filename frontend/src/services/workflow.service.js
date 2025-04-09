@@ -63,6 +63,26 @@ const WorkflowService = {
     const response = await api.post(`/api/workflows/${id}/resubmit`);
     return response.data;
   },
+  
+  /**
+   * Suspend a workflow
+   * @param {String} id - Workflow ID
+   * @returns {Promise<Object>} - Response data
+   */
+  suspendWorkflow: async (id) => {
+    const response = await api.put(`/api/workflows/${id}/suspend`);
+    return response.data;
+  },
+  
+  /**
+   * Resume a workflow
+   * @param {String} id - Workflow ID
+   * @returns {Promise<Object>} - Response data
+   */
+  resumeWorkflow: async (id) => {
+    const response = await api.put(`/api/workflows/${id}/resume`);
+    return response.data;
+  },
 
   /**
    * Get workflow logs
