@@ -151,36 +151,6 @@ function Dashboard() {
             </Card>
           </Grid>
           
-          {/* Recent Updates */}
-          <Grid item xs={12} md={6}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  Real-time Updates
-                </Typography>
-                <List>
-                  {workflowUpdates.length > 0 ? (
-                    workflowUpdates.map((update, index) => (
-                      <React.Fragment key={index}>
-                        <ListItem>
-                          <ListItemText
-                            primary={`Workflow ${update.metadata.name}`}
-                            secondary={`Status changed to ${update.status.phase} (${update.status.progress})`}
-                          />
-                        </ListItem>
-                        {index < workflowUpdates.length - 1 && <Divider />}
-                      </React.Fragment>
-                    ))
-                  ) : (
-                    <ListItem>
-                      <ListItemText primary="No recent updates" />
-                    </ListItem>
-                  )}
-                </List>
-              </CardContent>
-            </Card>
-          </Grid>
-          
           {/* Recent Workflows */}
           <Grid item xs={12} md={6}>
             <Card>
@@ -222,6 +192,36 @@ function Dashboard() {
             </Card>
           </Grid>
           
+          {/* Recent Updates */}
+          <Grid item xs={12} md={6}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>
+                  Real-time Updates
+                </Typography>
+                <List>
+                  {workflowUpdates.length > 0 ? (
+                    workflowUpdates.map((update, index) => (
+                      <React.Fragment key={index}>
+                        <ListItem>
+                          <ListItemText
+                            primary={`Workflow ${update.metadata.name}`}
+                            secondary={`Status changed to ${update.status.phase} (${update.status.progress})`}
+                          />
+                        </ListItem>
+                        {index < workflowUpdates.length - 1 && <Divider />}
+                      </React.Fragment>
+                    ))
+                  ) : (
+                    <ListItem>
+                      <ListItemText primary="No recent updates" />
+                    </ListItem>
+                  )}
+                </List>
+              </CardContent>
+            </Card>
+          </Grid>       
+
           {/* Available Templates */}
           <Grid item xs={12} md={6}>
             <Card>
@@ -262,6 +262,8 @@ function Dashboard() {
               </CardContent>
             </Card>
           </Grid>
+
+
         </Grid>
       )}
     </Box>
