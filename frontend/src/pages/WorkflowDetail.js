@@ -5,47 +5,23 @@ import {
   Box,
   Breadcrumbs,
   Button,
-  Card,
-  CardContent,
-  Chip,
   CircularProgress,
-  Divider,
-  FormControlLabel,
-  Grid,
   Link,
   Paper,
-  Switch,
   Tab,
   Tabs,
   Typography,
 } from '@mui/material';
-import {
-  ArrowBack as ArrowBackIcon,
-  Refresh as RefreshIcon,
-  Stop as StopIcon,
-  Replay as ReplayIcon,
-  Delete as DeleteIcon,
-  Pause as PauseIcon,
-  PlayArrow as PlayArrowIcon,
-} from '@mui/icons-material';
+import { ArrowBack as ArrowBackIcon } from '@mui/icons-material';
 import WorkflowService from '../services/workflow.service';
 import { useNotification } from '../contexts/NotificationContext';
-
-function TabPanel(props) {
-  const { children, value, index, ...other } = props;
-
-  return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      id={`workflow-tabpanel-${index}`}
-      aria-labelledby={`workflow-tab-${index}`}
-      {...other}
-    >
-      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
-    </div>
-  );
-}
+import TabPanel from '../components/TabPanel';
+import WorkflowActions from '../components/workflow/WorkflowActions';
+import WorkflowSummary from '../components/workflow/WorkflowSummary';
+import WorkflowParameters from '../components/workflow/WorkflowParameters';
+import WorkflowDetails from '../components/workflow/WorkflowDetails';
+import WorkflowOutputs from '../components/workflow/WorkflowOutputs';
+import { getStatusColor } from '../utils/workflowUtils';
 
 function WorkflowDetail() {
   const { id } = useParams();
@@ -209,24 +185,6 @@ function WorkflowDetail() {
     }
   };
 
-  const getStatusColor = (status) => {
-    switch (status?.toLowerCase()) {
-      case 'succeeded':
-        return 'success';
-      case 'running':
-        return 'info';
-      case 'pending':
-        return 'warning';
-      case 'suspended':
-        return 'warning';
-      case 'failed':
-      case 'terminated':
-        return 'error';
-      default:
-        return 'default';
-    }
-  };
-
   return (
     <Box>
       <Breadcrumbs aria-label="breadcrumb" sx={{ mb: 2 }}>
@@ -250,90 +208,17 @@ function WorkflowDetail() {
         >
           Back to Workflows
         </Button>
-        <Box>
-          <FormControlLabel
-            control={
-              <Switch
-                checked={realtimeEnabled}
-                onChange={(e) => setRealtimeEnabled(e.target.checked)}
-                color="primary"
-              />
-            }
-            label="Real-time updates"
-            sx={{ mr: 2 }}
-          />
-          <Button
-            variant="outlined"
-            startIcon={<RefreshIcon />}
-            onClick={fetchWorkflow}
-            sx={{ mr: 1 }}
-          >
-            Refresh
-          </Button>
-          {workflow?.status === 'Running' && (
-            <>
-              <Button
-                variant="outlined"
-                color="warning"
-                startIcon={<PauseIcon />}
-                onClick={handleSuspend}
-                sx={{ mr: 1 }}
-              >
-                Suspend
-              </Button>
-              <Button
-                variant="outlined"
-                color="error"
-                startIcon={<StopIcon />}
-                onClick={handleTerminate}
-                sx={{ mr: 1 }}
-              >
-                Terminate
-              </Button>
-            </>
-          )}
-          {workflow?.status === 'Suspended' && (
-            <Button
-              variant="outlined"
-              color="info"
-              startIcon={<PlayArrowIcon />}
-              onClick={handleResume}
-              sx={{ mr: 1 }}
-            >
-              Resume
-            </Button>
-          )}
-          {workflow?.status === 'Pending' && (
-            <Button
-              variant="outlined"
-              color="error"
-              startIcon={<StopIcon />}
-              onClick={handleTerminate}
-              sx={{ mr: 1 }}
-            >
-              Terminate
-            </Button>
-          )}
-          {(workflow?.status === 'Succeeded' || workflow?.status === 'Failed' || workflow?.status === 'Terminated') && (
-            <Button
-              variant="outlined"
-              color="secondary"
-              startIcon={<ReplayIcon />}
-              onClick={handleResubmit}
-              sx={{ mr: 1 }}
-            >
-              Resubmit
-            </Button>
-          )}
-          <Button
-            variant="outlined"
-            color="error"
-            startIcon={<DeleteIcon />}
-            onClick={handleDelete}
-          >
-            Delete
-          </Button>
-        </Box>
+        <WorkflowActions 
+          workflow={workflow}
+          realtimeEnabled={realtimeEnabled}
+          setRealtimeEnabled={setRealtimeEnabled}
+          onRefresh={fetchWorkflow}
+          onTerminate={handleTerminate}
+          onResubmit={handleResubmit}
+          onDelete={handleDelete}
+          onSuspend={handleSuspend}
+          onResume={handleResume}
+        />
       </Box>
 
       {loading ? (
@@ -342,64 +227,10 @@ function WorkflowDetail() {
         </Box>
       ) : workflow ? (
         <>
-          <Card sx={{ mb: 4 }}>
-            <CardContent>
-              <Typography variant="h4" gutterBottom>
-                {workflow.name}
-              </Typography>
-              <Box display="flex" alignItems="center" mb={2}>
-                <Typography variant="body1" color="text.secondary" sx={{ mr: 2 }}>
-                  Status:
-                </Typography>
-                <Chip
-                  label={workflow.status}
-                  color={getStatusColor(workflow.status)}
-                />
-              </Box>
-              {workflow.description && (
-                <Typography variant="body1" paragraph>
-                  {workflow.description}
-                </Typography>
-              )}
-              <Divider sx={{ my: 2 }} />
-              <Grid container spacing={2}>
-                <Grid item xs={12} sm={6} md={3}>
-                  <Typography variant="body2" color="text.secondary">
-                    Template:
-                  </Typography>
-                  <Typography variant="body1">{workflow.templateName}</Typography>
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
-                  <Typography variant="body2" color="text.secondary">
-                    Created:
-                  </Typography>
-                  <Typography variant="body1">
-                    {new Date(workflow.createdAt).toLocaleString()}
-                  </Typography>
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
-                  <Typography variant="body2" color="text.secondary">
-                    Started:
-                  </Typography>
-                  <Typography variant="body1">
-                    {workflow.startedAt
-                      ? new Date(workflow.startedAt).toLocaleString()
-                      : 'Not started'}
-                  </Typography>
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
-                  <Typography variant="body2" color="text.secondary">
-                    Finished:
-                  </Typography>
-                  <Typography variant="body1">
-                    {workflow.finishedAt
-                      ? new Date(workflow.finishedAt).toLocaleString()
-                      : 'Not finished'}
-                  </Typography>
-                </Grid>
-              </Grid>
-            </CardContent>
-          </Card>
+          <WorkflowSummary 
+            workflow={workflow} 
+            getStatusColor={getStatusColor} 
+          />
 
           <Paper sx={{ width: '100%', mb: 2 }}>
             <Tabs
@@ -414,81 +245,15 @@ function WorkflowDetail() {
             </Tabs>
 
             <TabPanel value={tabValue} index={0}>
-              <Typography variant="h6" gutterBottom>
-                Input Parameters
-              </Typography>
-              {workflow.parameters && Object.keys(workflow.parameters).length > 0 ? (
-                <Box component="dl" sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 2 }}>
-                  {Object.entries(workflow.parameters).map(([key, value]) => (
-                    <Box key={key} sx={{ mb: 2 }}>
-                      <Typography component="dt" variant="body2" color="text.secondary">
-                        {key}:
-                      </Typography>
-                      <Typography component="dd" variant="body1">
-                        {value}
-                      </Typography>
-                    </Box>
-                  ))}
-                </Box>
-              ) : (
-                <Alert severity="info">No parameters for this workflow</Alert>
-              )}
+              <WorkflowParameters parameters={workflow.parameters} />
             </TabPanel>
 
             <TabPanel value={tabValue} index={1}>
-              <Typography variant="h6" gutterBottom>
-                Argo Workflow Details
-              </Typography>
-              {argoWorkflow ? (
-                <Box>
-                  <Typography variant="body2" gutterBottom>
-                    Phase: <Chip label={argoWorkflow.status?.phase || 'Unknown'} size="small" />
-                  </Typography>
-                  <Typography variant="body2" gutterBottom>
-                    Started: {argoWorkflow.status?.startedAt ? new Date(argoWorkflow.status.startedAt).toLocaleString() : 'Not started'}
-                  </Typography>
-                  <Typography variant="body2" gutterBottom>
-                    Finished: {argoWorkflow.status?.finishedAt ? new Date(argoWorkflow.status.finishedAt).toLocaleString() : 'Not finished'}
-                  </Typography>
-                  <Typography variant="body2" gutterBottom>
-                    Message: {argoWorkflow.status?.message || 'No message'}
-                  </Typography>
-                </Box>
-              ) : (
-                <Alert severity="info">No Argo workflow details available</Alert>
-              )}
+              <WorkflowDetails argoWorkflow={argoWorkflow} />
             </TabPanel>
 
             <TabPanel value={tabValue} index={2}>
-              <Typography variant="h6" gutterBottom>
-                Workflow Outputs
-              </Typography>
-              {workflow.artifacts && workflow.artifacts.length > 0 ? (
-                <Grid container spacing={2}>
-                  {workflow.artifacts.map((artifact, index) => (
-                    <Grid item xs={12} sm={6} md={4} key={index}>
-                      <Card variant="outlined">
-                        <CardContent>
-                          <Typography variant="subtitle1">{artifact.name}</Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            {artifact.path}
-                          </Typography>
-                          <Button
-                            variant="outlined"
-                            size="small"
-                            sx={{ mt: 1 }}
-                            onClick={() => window.open(`/api/storage/presigned-url?bucket=${artifact.s3.bucket}&objectName=${artifact.s3.key}`)}
-                          >
-                            Download
-                          </Button>
-                        </CardContent>
-                      </Card>
-                    </Grid>
-                  ))}
-                </Grid>
-              ) : (
-                <Alert severity="info">No outputs available for this workflow</Alert>
-              )}
+              <WorkflowOutputs artifacts={workflow.artifacts} />
             </TabPanel>
           </Paper>
         </>

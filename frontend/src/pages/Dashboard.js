@@ -262,8 +262,6 @@ function Dashboard() {
               </CardContent>
             </Card>
           </Grid>
-
-
         </Grid>
       )}
     </Box>

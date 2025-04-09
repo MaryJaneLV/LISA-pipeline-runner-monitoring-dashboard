@@ -70,12 +70,6 @@ function Layout() {
   
   const drawer = (
     <div>
-      <Toolbar>
-        <Typography variant="h6" noWrap component="div">
-          Scientific Workflow
-        </Typography>
-      </Toolbar>
-      <Divider />
       <List>
         {menuItems.map((item) => (
           <ListItem key={item.text} disablePadding>
@@ -99,6 +93,7 @@ function Layout() {
         sx={{
           width: { sm: `calc(100% - ${drawerWidth}px)` },
           ml: { sm: `${drawerWidth}px` },
+          borderRadius: 0 
         }}
       >
         <Toolbar>
@@ -112,7 +107,7 @@ function Layout() {
             <MenuIcon />
           </IconButton>
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-            Scientific Workflow Pipeline Runner
+            Pipeline Runner
           </Typography>
           
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
