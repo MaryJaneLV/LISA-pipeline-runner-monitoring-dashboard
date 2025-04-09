@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Alert,
@@ -25,10 +25,11 @@ import {
   Stop as StopIcon,
   Replay as ReplayIcon,
   Delete as DeleteIcon,
+  Pause as PauseIcon,
+  PlayArrow as PlayArrowIcon,
 } from '@mui/icons-material';
 import WorkflowService from '../services/workflow.service';
 import { useNotification } from '../contexts/NotificationContext';
-import { useSocket } from '../contexts/SocketContext';
 
 function TabPanel(props) {
   const { children, value, index, ...other } = props;
@@ -50,7 +51,6 @@ function WorkflowDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { showSuccess, showError } = useNotification();
-  const { connected } = useSocket();
 
   const [workflow, setWorkflow] = useState(null);
   const [argoWorkflow, setArgoWorkflow] = useState(null);
@@ -58,7 +58,7 @@ function WorkflowDetail() {
   const [tabValue, setTabValue] = useState(0);
   const [realtimeEnabled, setRealtimeEnabled] = useState(true);
 
-  const fetchWorkflow = async () => {
+  const fetchWorkflow = useCallback(async () => {
     setLoading(true);
     try {
       const result = await WorkflowService.getWorkflow(id);
@@ -70,7 +70,7 @@ function WorkflowDetail() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, showError]);
 
   useEffect(() => {
     fetchWorkflow();
@@ -138,7 +138,7 @@ function WorkflowDetail() {
         );
       }
     };
-  }, [id, workflow, realtimeEnabled]);
+  }, [id, workflow, realtimeEnabled, showSuccess, fetchWorkflow]);
 
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
@@ -183,6 +183,32 @@ function WorkflowDetail() {
     }
   };
 
+  const handleSuspend = async () => {
+    if (window.confirm('Are you sure you want to suspend this workflow?')) {
+      try {
+        await WorkflowService.suspendWorkflow(id);
+        showSuccess('Workflow suspended successfully');
+        fetchWorkflow();
+      } catch (error) {
+        console.error('Failed to suspend workflow:', error);
+        showError('Failed to suspend workflow');
+      }
+    }
+  };
+
+  const handleResume = async () => {
+    if (window.confirm('Are you sure you want to resume this workflow?')) {
+      try {
+        await WorkflowService.resumeWorkflow(id);
+        showSuccess('Workflow resumed successfully');
+        fetchWorkflow();
+      } catch (error) {
+        console.error('Failed to resume workflow:', error);
+        showError('Failed to resume workflow');
+      }
+    }
+  };
+
   const getStatusColor = (status) => {
     switch (status?.toLowerCase()) {
       case 'succeeded':
@@ -190,6 +216,8 @@ function WorkflowDetail() {
       case 'running':
         return 'info';
       case 'pending':
+        return 'warning';
+      case 'suspended':
         return 'warning';
       case 'failed':
       case 'terminated':
@@ -242,7 +270,40 @@ function WorkflowDetail() {
           >
             Refresh
           </Button>
-          {workflow?.status === 'Running' || workflow?.status === 'Pending' ? (
+          {workflow?.status === 'Running' && (
+            <>
+              <Button
+                variant="outlined"
+                color="warning"
+                startIcon={<PauseIcon />}
+                onClick={handleSuspend}
+                sx={{ mr: 1 }}
+              >
+                Suspend
+              </Button>
+              <Button
+                variant="outlined"
+                color="error"
+                startIcon={<StopIcon />}
+                onClick={handleTerminate}
+                sx={{ mr: 1 }}
+              >
+                Terminate
+              </Button>
+            </>
+          )}
+          {workflow?.status === 'Suspended' && (
+            <Button
+              variant="outlined"
+              color="info"
+              startIcon={<PlayArrowIcon />}
+              onClick={handleResume}
+              sx={{ mr: 1 }}
+            >
+              Resume
+            </Button>
+          )}
+          {workflow?.status === 'Pending' && (
             <Button
               variant="outlined"
               color="error"
@@ -252,7 +313,8 @@ function WorkflowDetail() {
             >
               Terminate
             </Button>
-          ) : (
+          )}
+          {(workflow?.status === 'Succeeded' || workflow?.status === 'Failed' || workflow?.status === 'Terminated') && (
             <Button
               variant="outlined"
               color="secondary"

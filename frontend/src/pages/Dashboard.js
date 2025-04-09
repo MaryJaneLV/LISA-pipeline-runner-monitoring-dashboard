@@ -164,8 +164,8 @@ function Dashboard() {
                       <React.Fragment key={index}>
                         <ListItem>
                           <ListItemText
-                            primary={`Workflow ${update.argoWorkflowName}`}
-                            secondary={`Status changed to ${update.status} (${update.event})`}
+                            primary={`Workflow ${update.metadata.name}`}
+                            secondary={`Status changed to ${update.status.phase} (${update.status.progress})`}
                           />
                         </ListItem>
                         {index < workflowUpdates.length - 1 && <Divider />}

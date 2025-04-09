@@ -27,12 +27,10 @@ import {
 } from '@mui/icons-material';
 import WorkflowService from '../services/workflow.service';
 import { useNotification } from '../contexts/NotificationContext';
-import { useSocket } from '../contexts/SocketContext';
 
 function WorkflowList() {
   const navigate = useNavigate();
   const { showSuccess, showError } = useNotification();
-  const { connected } = useSocket();
   
   const [workflows, setWorkflows] = useState([]);
   const [loading, setLoading] = useState(true);
