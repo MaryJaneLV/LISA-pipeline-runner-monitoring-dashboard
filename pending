@@ -1,3 +1,19 @@
-- make backend publish workflows using kafka
-- update the frontend values (using the open socket connection, hopefuly)
-- Make argo read/write input/outputs to minio spaces defined for that
+- Fix suspend/resume status updates
+- Present logs as results
+- Fix Workflow Outputs - File not authorized to access
+- Show logs in the Workflow details
+- Update parameters when the workflow is submitted
+- Remove bucket selection option
+- Check about python modules as input (last in the list of priorities)
+- Check if we can delete templates/workflows from the DB using events (so that they are deleted from the db if they are deleted in argo)
+- Check how can we fix
+  - Name stored in argo different than the one we use (for templates). This causes that sometimes when we want create a workflow argo send back that it can't find the template
+  - Unique names for templates - if someone else creates the same template name we can't upload one
+
+
+  - Add unit tests
+  - Add integration tests
+  - Add patterns
+    - Resicilience
+    - Observability
+    - Security Implementation

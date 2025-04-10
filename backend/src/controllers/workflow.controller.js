@@ -526,11 +526,15 @@ exports.updateWorkflowStatus = async (argoWorkflow) => {
       }
     }
 
-    // Update if status changed
+    // Track if any updates were made to require saving
+    let requiresSave = false;
+
+    // Update status if changed
     if (workflow.status !== newStatus) {
       console.log(`[WorkflowController] Updating workflow ${workflow._id} status from ${workflow.status} to ${newStatus}`);
       
       workflow.status = newStatus;
+      requiresSave = true;
       
       // Update timestamps based on status
       if (['Running'].includes(newStatus) && !workflow.startedAt) {
@@ -540,13 +544,27 @@ exports.updateWorkflowStatus = async (argoWorkflow) => {
       if (['Succeeded', 'Failed', 'Terminated'].includes(newStatus) && !workflow.finishedAt) {
         workflow.finishedAt = new Date();
       }
+    }
+
+    // Update artifacts if workflow is completed or running
+    if (['Running', 'Succeeded', 'Failed'].includes(newStatus)) {
+      // Extract artifacts from Argo workflow
+      const artifacts = extractArtifactsFromArgoWorkflow(argoWorkflow, workflow);
       
+      if (artifacts && artifacts.length > 0) {
+        console.log(`[WorkflowController] Updating workflow ${workflow._id} with ${artifacts.length} artifacts`);
+        workflow.artifacts = artifacts;
+        requiresSave = true;
+      }
+    }
+    
+    // Save if any updates were made
+    if (requiresSave) {
       await workflow.save();
-      console.log(`[WorkflowController] Workflow ${workflow._id} status updated to ${newStatus}`);
-      
+      console.log(`[WorkflowController] Workflow ${workflow._id} updated successfully`);
       return workflow;
     } else {
-      console.log(`[WorkflowController] No status change for workflow ${workflow._id}`);
+      console.log(`[WorkflowController] No changes for workflow ${workflow._id}`);
       return workflow;
     }
   } catch (error) {
@@ -554,3 +572,106 @@ exports.updateWorkflowStatus = async (argoWorkflow) => {
     return null;
   }
 };
+
+/**
+ * Extract artifacts from Argo workflow and merge with existing artifacts
+ * @param {Object} argoWorkflow - The Argo workflow object from event
+ * @param {Object} workflow - The workflow from MongoDB
+ * @returns {Array} - Merged array of artifact objects
+ */
+
+const extractArtifactsFromArgoWorkflow = (argoWorkflow, workflow) => {
+  try {
+    const artifacts = [];
+
+    // Extract top-level workflow outputs artifacts - only present in completed workflows
+    if (argoWorkflow.status?.outputs?.artifacts) {
+      for (const argoArtifact of argoWorkflow.status.outputs.artifacts) {
+        // Only consider s3 artifacts
+        if (argoArtifact.s3) {
+          artifacts.push({
+            name: argoArtifact.name,
+            path: argoArtifact.path || '',
+            s3: {
+              bucket: argoArtifact.s3.bucket,
+              key: argoArtifact.s3.key
+            }
+          });
+        }
+      }
+    }
+
+    // Extract artifacts from nodes - only actual generated artifacts, not template definitions
+    if (argoWorkflow.status?.nodes) {
+      const nodes = Object.values(argoWorkflow.status.nodes);
+      
+      for (const node of nodes) {
+        // Only extract artifacts from completed or running nodes that have actual outputs
+        // We can verify a node has real outputs if it has phase Succeeded
+        const nodeCompleted = node.phase === 'Succeeded';
+        
+        if (nodeCompleted && node.outputs?.artifacts) {
+          for (const nodeArtifact of node.outputs.artifacts) {
+            // Skip log artifacts unless specifically configured to include them
+            if (nodeArtifact.name === 'main-logs' && !nodeArtifact.path) {
+              continue;
+            }
+            
+            // Only consider s3 artifacts and avoid duplicates
+            if (nodeArtifact.s3 && !artifacts.some(a => 
+              a.name === nodeArtifact.name && 
+              a.s3.bucket === nodeArtifact.s3.bucket && 
+              a.s3.key === nodeArtifact.s3.key)) {
+              
+              artifacts.push({
+                name: nodeArtifact.name,
+                path: nodeArtifact.path || '',
+                s3: {
+                  bucket: nodeArtifact.s3.bucket || 'pipeline-runner-artifacts',
+                  key: nodeArtifact.s3.key
+                }
+              });
+            }
+          }
+        }
+      }
+    }
+    
+    // Merge artifacts from the workflow.artifacts property if it exists
+    if (workflow?.artifacts && Array.isArray(workflow.artifacts)) {
+      for (const workflowArtifact of workflow.artifacts) {
+        // Only consider valid workflow artifacts with s3 data
+        if (workflowArtifact.s3) {
+          // Check if this artifact already exists in our list to avoid duplications
+          const isDuplicate = artifacts.some(a => 
+            a.name === workflowArtifact.name && 
+            a.s3.bucket === workflowArtifact.s3.bucket && 
+            a.s3.key === workflowArtifact.s3.key
+          );
+          
+          // Add to artifacts list if not a duplicate
+          if (!isDuplicate) {
+            artifacts.push({
+              name: workflowArtifact.name,
+              path: workflowArtifact.path || '',
+              s3: {
+                bucket: workflowArtifact.s3.bucket,
+                key: workflowArtifact.s3.key
+              }
+            });
+          }
+        }
+      }
+    }
+    
+    // For workflows that haven't completed yet, we should not try to infer artifacts
+    // from templates as they don't exist yet on S3
+    
+    console.log(`[WorkflowController] Extracted ${artifacts.length} artifacts from Argo workflow with phase: ${argoWorkflow.status?.phase || 'unknown'}`);
+    return artifacts;
+  } catch (error) {
+    console.error(`[WorkflowController] Error extracting artifacts: ${error.message}`);
+    return [];
+  }
+};
+
