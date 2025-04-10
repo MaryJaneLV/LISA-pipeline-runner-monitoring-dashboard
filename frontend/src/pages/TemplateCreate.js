@@ -83,7 +83,6 @@ function TemplateCreate() {
         // Merge extracted parameters with user-defined ones
         // We keep user params that don't exist in the YAML and add new ones from YAML
         const existingParamNames = values.parameters.map(p => p.name);
-        const yamlParamNames = extractedParams.map(p => p.name);
         
         // Keep existing user parameters
         let mergedParams = [...values.parameters];
