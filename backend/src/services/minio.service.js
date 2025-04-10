@@ -20,9 +20,7 @@ class MinioService {
    */
   async initBuckets() {
     const defaultBuckets = [
-      'workflow-artifacts',
-      'workflow-inputs',
-      'workflow-outputs'
+      'pipeline-runner-artifacts',
     ];
     
     for (const bucket of defaultBuckets) {

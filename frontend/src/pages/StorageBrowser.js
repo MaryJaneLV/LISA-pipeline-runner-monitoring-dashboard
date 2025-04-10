@@ -14,7 +14,7 @@ import FileUploader from '../components/storage/FileUploader';
 import StorageInfo from '../components/storage/StorageInfo';
 import { formatSize, processObjects } from '../utils/storageUtils';
 
-const DEFAULT_BUCKETS = ['workflow-artifacts', 'workflow-inputs', 'workflow-outputs'];
+const DEFAULT_BUCKETS = ['pipeline-runner-artifacts'];
 
 function StorageBrowser() {
   const { showSuccess, showError } = useNotification();

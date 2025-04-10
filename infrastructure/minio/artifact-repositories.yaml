@@ -9,7 +9,7 @@ data:
   default-v1: |
     archiveLogs: true
     s3:
-      bucket: workflow-artifacts
+      bucket: pipeline-runner-artifacts
       endpoint: minio:9000
       insecure: true
       accessKeySecret:

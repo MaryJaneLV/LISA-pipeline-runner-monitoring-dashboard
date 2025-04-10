@@ -1,0 +1,43 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: dag-workflow
+spec:
+  entrypoint: dag-example
+  templates:
+    - name: dag-example
+      dag:
+        tasks:
+          - name: step-1
+            template: print-message
+          - name: step-2
+            dependencies: [step-1]
+            template: print-message
+            arguments:
+              parameters:
+                - name: message
+                  value: "Step 2 executed after Step 1"
+          - name: step-3
+            dependencies: [step-1]
+            template: print-message
+            arguments:
+              parameters:
+                - name: message
+                  value: "Step 3 executed after Step 1"
+          - name: step-4
+            dependencies: [step-2, step-3]
+            template: print-message
+            arguments:
+              parameters:
+                - name: message
+                  value: "Step 4 executed after Step 2 & Step 3"
+
+    - name: print-message
+      inputs:
+        parameters:
+          - name: message
+            default: "Default message"
+      container:
+        image: alpine
+        command: [sh, -c]
+        args: ["echo {{inputs.parameters.message}}"]

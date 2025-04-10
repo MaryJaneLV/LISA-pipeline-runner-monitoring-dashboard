@@ -13,9 +13,7 @@ function StorageInfo() {
         <strong>Default Buckets:</strong>
       </Typography>
       <ul>
-        <li><Typography variant="body2">workflow-artifacts: Intermediate workflow data</Typography></li>
-        <li><Typography variant="body2">workflow-inputs: Input files for workflows</Typography></li>
-        <li><Typography variant="body2">workflow-outputs: Final results from workflows</Typography></li>
+        <li><Typography variant="body2">pipeline-runner-artifacts: Intermediate workflow data</Typography></li>
       </ul>
       
       <Typography variant="body2" sx={{ mt: 2 }}>

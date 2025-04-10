@@ -18,9 +18,7 @@ spec:
             echo "Waiting for MinIO to be available..."
             sleep 5
           done
-          mc mb --ignore-existing myminio/workflow-artifacts;
-          mc mb --ignore-existing myminio/workflow-inputs;
-          mc mb --ignore-existing myminio/workflow-outputs;
+          mc mb --ignore-existing myminio/pipeline-runner-artifacts;
           mc admin user add myminio workflow-user workflow-password;
           mc admin policy attach myminio readwrite --user workflow-user;
       restartPolicy: Never
