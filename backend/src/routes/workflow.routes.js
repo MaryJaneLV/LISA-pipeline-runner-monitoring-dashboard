@@ -249,7 +249,7 @@ router.post('/:id/resubmit', workflowController.resubmitWorkflow);
  * /workflows/{id}/logs:
  *   get:
  *     summary: Get workflow logs
- *     description: Retrieves logs for a specific workflow pod
+ *     description: Retrieves logs for a specific workflow
  *     tags: [Workflows]
  *     parameters:
  *       - in: path
@@ -258,17 +258,9 @@ router.post('/:id/resubmit', workflowController.resubmitWorkflow);
  *         schema:
  *           type: string
  *         description: Workflow ID
- *       - in: query
- *         name: podName
- *         required: true
- *         schema:
- *           type: string
- *         description: Pod name
  *     responses:
  *       200:
  *         description: Workflow logs
- *       400:
- *         description: Pod name is required
  *       404:
  *         description: Workflow not found
  */

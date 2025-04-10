@@ -374,7 +374,6 @@ exports.deleteWorkflow = async (req, res, next) => {
 exports.getWorkflowLogs = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { podName } = req.query;
     
     const workflow = await Workflow.findOne({
       _id: id,
@@ -385,12 +384,8 @@ exports.getWorkflowLogs = async (req, res, next) => {
       return next(createError(404, 'Workflow not found'));
     }
     
-    if (!podName) {
-      return next(createError(400, 'Pod name is required'));
-    }
-    
     // Get logs from Argo
-    const logs = await argoService.getWorkflowLogs(workflow.argoWorkflowName, podName);
+    const logs = await argoService.getWorkflowLogs(workflow.argoWorkflowName);
     
     res.json({
       logs

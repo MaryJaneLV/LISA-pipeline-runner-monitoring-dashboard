@@ -87,13 +87,10 @@ const WorkflowService = {
   /**
    * Get workflow logs
    * @param {String} id - Workflow ID
-   * @param {String} podName - Pod name
    * @returns {Promise<Object>} - Logs data
    */
-  getWorkflowLogs: async (id, podName) => {
-    const response = await api.get(`/api/workflows/${id}/logs`, {
-      params: { podName }
-    });
+  getWorkflowLogs: async (id) => {
+    const response = await api.get(`/api/workflows/${id}/logs`);
     return response.data;
   }
 };

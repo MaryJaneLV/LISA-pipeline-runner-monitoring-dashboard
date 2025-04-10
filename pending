@@ -1,7 +1,5 @@
 - Fix suspend/resume status updates
-- Present logs as results
 - Fix Workflow Outputs - File not authorized to access
-- Show logs in the Workflow details
 - Update parameters when the workflow is submitted
 - Remove bucket selection option
 - Check about python modules as input (last in the list of priorities)

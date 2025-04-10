@@ -21,6 +21,7 @@ import WorkflowSummary from '../components/workflow/WorkflowSummary';
 import WorkflowParameters from '../components/workflow/WorkflowParameters';
 import WorkflowDetails from '../components/workflow/WorkflowDetails';
 import WorkflowOutputs from '../components/workflow/WorkflowOutputs';
+import WorkflowLogs from '../components/workflow/WorkflowLogs';
 import { getStatusColor } from '../utils/workflowUtils';
 
 function WorkflowDetail() {
@@ -242,6 +243,7 @@ function WorkflowDetail() {
               <Tab label="Parameters" />
               <Tab label="Workflow Details" />
               <Tab label="Outputs" />
+              <Tab label="Logs" />
             </Tabs>
 
             <TabPanel value={tabValue} index={0}>
@@ -254,6 +256,10 @@ function WorkflowDetail() {
 
             <TabPanel value={tabValue} index={2}>
               <WorkflowOutputs artifacts={workflow.artifacts} />
+            </TabPanel>
+            
+            <TabPanel value={tabValue} index={3}>
+              <WorkflowLogs workflowId={id} />
             </TabPanel>
           </Paper>
         </>

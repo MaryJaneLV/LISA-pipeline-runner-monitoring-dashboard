@@ -173,14 +173,14 @@ class ArgoService {
   /**
    * Get workflow logs
    * @param {String} name - The workflow name
-   * @param {String} podName - The pod name
    * @param {String} namespace - The namespace (optional)
    * @returns {Promise<Object>} - The logs
    */
-  async getWorkflowLogs(name, podName, namespace = config.argo.namespace) {
+  async getWorkflowLogs(name, namespace = config.argo.namespace) {
     try {
+      console.log('[ArgoService] Fetching logs for workflow:', `/api/v1/workflows/${namespace}/${name}/log`);
       const response = await this.client.get(
-        `/api/v1/workflows/${namespace}/${name}/log?podName=${podName}`
+        `/api/v1/workflows/${namespace}/${name}/log?logOptions.container=main&grep=&logOptions.follow=true`
       );
       return response.data;
     } catch (error) {
