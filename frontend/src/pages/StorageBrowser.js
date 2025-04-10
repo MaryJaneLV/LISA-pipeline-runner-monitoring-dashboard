@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Card,
@@ -18,14 +18,13 @@ import FileUploader from '../components/storage/FileUploader';
 import StorageInfo from '../components/storage/StorageInfo';
 import { formatSize, processObjects } from '../utils/storageUtils';
 
-const DEFAULT_BUCKETS = ['pipeline-runner-artifacts'];
+const DEFAULT_BUCKET = 'pipeline-runner-artifacts';
 
 function StorageBrowser() {
   const { showSuccess, showError } = useNotification();
   const { user } = useAuth();
   const userId = user?._id;
   
-  const [selectedBucket, setSelectedBucket] = useState(DEFAULT_BUCKETS[0]);
   const [currentPrefix, setCurrentPrefix] = useState('');
   const [objects, setObjects] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -36,28 +35,35 @@ function StorageBrowser() {
   const [file, setFile] = useState(null);
   const [objectName, setObjectName] = useState('');
   
-  useEffect(() => {
-    if (!selectedBucket) {
-      setSelectedBucket(DEFAULT_BUCKETS[0]);
-    }
+  const handleTabChange = useCallback((_, newValue) => {
+    setSelectedTab(newValue);
     
+    // Set prefix based on selected tab
+    if (newValue === 0 && userId) { // My Files tab
+      setCurrentPrefix(`${userId}/`);
+    } else if (newValue === 1) { // Public Files tab
+      setCurrentPrefix('public/');
+    }
+  }, [userId]);
+
+  useEffect(() => {    
     // Set initial prefix based on user ID
     if (userId && currentPrefix === '') {
       handleTabChange(null, selectedTab);
     }
-  }, [selectedBucket, userId]);
+  }, [userId, currentPrefix, handleTabChange, selectedTab]);
   
   useEffect(() => {
-    if (selectedBucket && currentPrefix) {
+    if (currentPrefix) {
       fetchObjects();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedBucket, currentPrefix]);
+  }, [currentPrefix]);
   
   const fetchObjects = async () => {
     setLoading(true);
     try {
-      const result = await StorageService.listObjects(selectedBucket, currentPrefix);
+      const result = await StorageService.listObjects(DEFAULT_BUCKET, currentPrefix);
       
       // Process objects to handle folders
       const processedObjects = processObjects(result.objects, currentPrefix);
@@ -67,22 +73,6 @@ function StorageBrowser() {
       showError('Failed to load objects from storage');
     } finally {
       setLoading(false);
-    }
-  };
-  
-  const handleBucketChange = (event) => {
-    setSelectedBucket(event.target.value);
-    handleTabChange(null, selectedTab);
-  };
-  
-  const handleTabChange = (event, newValue) => {
-    setSelectedTab(newValue);
-    
-    // Set prefix based on selected tab
-    if (newValue === 0 && userId) { // My Files tab
-      setCurrentPrefix(`${userId}/`);
-    } else if (newValue === 1) { // Public Files tab
-      setCurrentPrefix('public/');
     }
   };
   
@@ -110,7 +100,7 @@ function StorageBrowser() {
     setUploading(true);
     try {
       const fullObjectName = targetPrefix + objectName;
-      await StorageService.uploadFile(file, selectedBucket, fullObjectName);
+      await StorageService.uploadFile(file, DEFAULT_BUCKET, fullObjectName);
       
       showSuccess('File uploaded successfully');
       setFile(null);
@@ -128,7 +118,7 @@ function StorageBrowser() {
   
   const handleDownload = async (objectName) => {
     try {
-      const result = await StorageService.getPresignedUrl(selectedBucket, objectName);
+      const result = await StorageService.getPresignedUrl(DEFAULT_BUCKET, objectName);
       
       // Open the URL in a new tab
       window.open(result.url, '_blank');
@@ -141,7 +131,7 @@ function StorageBrowser() {
   const handleDelete = async (objectName) => {
     if (window.confirm('Are you sure you want to delete this object?')) {
       try {
-        await StorageService.deleteObject(selectedBucket, objectName);
+        await StorageService.deleteObject(DEFAULT_BUCKET, objectName);
         
         showSuccess('Object deleted successfully');
         fetchObjects();
@@ -193,9 +183,7 @@ function StorageBrowser() {
           <Card sx={{ mb: 4 }}>
             <CardContent>
               <BucketSelector 
-                buckets={DEFAULT_BUCKETS}
-                selectedBucket={selectedBucket}
-                onBucketChange={handleBucketChange}
+                bucket={DEFAULT_BUCKET}
                 onRefresh={navigateUp}
                 currentPrefix={currentPrefix}
               />

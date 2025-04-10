@@ -1,32 +1,18 @@
 import React from 'react';
-import { Box, Button, Divider, FormControl, InputLabel, MenuItem, Select, Typography } from '@mui/material';
+import { Box, Button, Divider, Typography } from '@mui/material';
 import { Refresh as RefreshIcon } from '@mui/icons-material';
 
 function BucketSelector({ 
-  buckets, 
-  selectedBucket, 
-  onBucketChange, 
+  bucket, 
   onRefresh, 
   currentPrefix 
 }) {
   return (
     <>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-        <FormControl sx={{ minWidth: 200 }}>
-          <InputLabel id="bucket-select-label">Bucket</InputLabel>
-          <Select
-            labelId="bucket-select-label"
-            value={selectedBucket}
-            onChange={onBucketChange}
-            label="Bucket"
-          >
-            {buckets.map((bucket) => (
-              <MenuItem key={bucket} value={bucket}>
-                {bucket}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+        <Typography variant="h6">
+          Bucket: {bucket}
+        </Typography>
         
         <Button
           variant="outlined"
