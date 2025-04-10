@@ -22,8 +22,21 @@ exports.listObjects = async (req, res, next) => {
       return next(createError(404, 'Bucket not found'));
     }
     
-    // List objects
-    const objects = await minioService.listObjects(bucket, prefix || '');
+    // Determine accessible prefixes based on user ID
+    const userId = req.user._id.toString();
+    const userPrefix = `${userId}/`;
+    const publicPrefix = 'public/';
+    
+    // If no prefix is provided or prefix is invalid, default to the user's root
+    let adjustedPrefix = prefix || userPrefix;
+    
+    // Check if the prefix starts with allowed prefixes, otherwise restrict to user's folder
+    if (!adjustedPrefix.startsWith(userPrefix) && !adjustedPrefix.startsWith(publicPrefix)) {
+      adjustedPrefix = userPrefix;
+    }
+    
+    // List objects with proper access control
+    const objects = await minioService.listObjects(bucket, adjustedPrefix);
     
     res.json({
       objects
@@ -45,6 +58,15 @@ exports.getPresignedUrl = async (req, res, next) => {
     
     if (!bucket || !objectName) {
       return next(createError(400, 'Bucket and object name are required'));
+    }
+    
+    // Check access permissions based on user ID
+    const userId = req.user._id.toString();
+    const userPrefix = `${userId}/`;
+    const publicPrefix = 'public/';
+    
+    if (!objectName.startsWith(userPrefix) && !objectName.startsWith(publicPrefix)) {
+      return next(createError(403, 'Access denied: You can only access your files or public files'));
     }
     
     // Get presigned URL
@@ -87,6 +109,21 @@ exports.uploadFile = async (req, res, next) => {
       await minioService.createBucket(bucket);
     }
     
+    // Determine if this upload is allowed based on path
+    const userId = req.user._id.toString();
+    const userInputPrefix = `${userId}/input/`;
+    const userOutputPrefix = `${userId}/output/`;
+    const publicInputPrefix = 'public/input/';
+    const publicOutputPrefix = 'public/output/';
+    
+    // Ensure file is being uploaded to an allowed location
+    if (!objectName.startsWith(userInputPrefix) && 
+        !objectName.startsWith(userOutputPrefix) && 
+        !objectName.startsWith(publicInputPrefix) && 
+        !objectName.startsWith(publicOutputPrefix)) {
+      return next(createError(403, 'Files must be uploaded to a valid input or output folder'));
+    }
+    
     // Upload file
     const result = await minioService.uploadObject(
       bucket,
@@ -117,6 +154,15 @@ exports.deleteObject = async (req, res, next) => {
     
     if (!bucket || !objectName) {
       return next(createError(400, 'Bucket and object name are required'));
+    }
+    
+    // Enforce access control for deletion
+    const userId = req.user._id.toString();
+    const userPrefix = `${userId}/`;
+    
+    // Only allow deletion within user's own folder, not in public folders
+    if (!objectName.startsWith(userPrefix)) {
+      return next(createError(403, 'You can only delete files in your own folders'));
     }
     
     // Delete object

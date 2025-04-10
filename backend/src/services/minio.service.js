@@ -30,6 +30,43 @@ class MinioService {
       }
     }
   }
+  
+  /**
+   * Initialize user storage folders in the default bucket
+   * Creates the necessary folder structure for user storage
+   * @param {String} userId - The user ID
+   * @returns {Promise<void>}
+   */
+  async initUserStorage(userId) {
+    const bucket = 'pipeline-runner-artifacts';
+    const userFolderPaths = [
+      `${userId}/`, 
+      `${userId}/input/`, 
+      `${userId}/output/`,
+      `public/`,
+      `public/input/`,
+      `public/output/`
+    ];
+    
+    try {
+      // Check if bucket exists
+      const bucketExists = await this.bucketExists(bucket);
+      if (!bucketExists) {
+        await this.createBucket(bucket);
+      }
+      
+      // Create empty objects to represent folders
+      for (const folderPath of userFolderPaths) {
+        // Using putObject with empty buffer creates the "folder"
+        await this.client.putObject(bucket, folderPath, Buffer.from(''), 0);
+      }
+      
+      console.log(`Storage folders initialized for user: ${userId}`);
+    } catch (error) {
+      console.error(`Error initializing user storage: ${error.message}`);
+      throw new Error(`Error initializing user storage: ${error.message}`);
+    }
+  }
 
   /**
    * Check if a bucket exists

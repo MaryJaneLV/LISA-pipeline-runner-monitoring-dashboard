@@ -30,6 +30,10 @@ exports.register = async (req, res, next) => {
     
     await user.save();
     
+    // Initialize user storage structure
+    const minioService = require('../services/minio.service');
+    await minioService.initUserStorage(user.id);
+    
     // Generate token
     const token = jwt.sign({ id: user.id }, config.jwt.secret, {
       expiresIn: config.jwt.expiresIn

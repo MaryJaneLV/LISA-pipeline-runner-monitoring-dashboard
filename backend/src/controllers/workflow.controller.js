@@ -96,10 +96,35 @@ exports.createWorkflow = async (req, res, next) => {
       return next(createError(404, 'Workflow template not found'));
     }
     
+    // Get user ID for artifact paths
+    const userId = req.user._id.toString();
+    
+    // Add user-specific artifact paths if not provided
+    const workflowParams = { ...parameters } || {};
+    
+    // Set user-specific input and output paths if not specified
+    if (!workflowParams.artifactInputPath) {
+      workflowParams.artifactInputPath = `${userId}/input`;
+    }
+    if (!workflowParams.artifactOutputPath) {
+      workflowParams.artifactOutputPath = `${userId}/output`;
+    }
+    
+    // Ensure paths are within allowed locations
+    if (!workflowParams.artifactInputPath.startsWith(`${userId}/input`) && 
+        !workflowParams.artifactInputPath.startsWith('public/input')) {
+      return next(createError(400, 'Input path must be within your input folder or public input folder'));
+    }
+    
+    if (!workflowParams.artifactOutputPath.startsWith(`${userId}/output`) && 
+        !workflowParams.artifactOutputPath.startsWith('public/output')) {
+      return next(createError(400, 'Output path must be within your output folder or public output folder'));
+    }
+    
     // Convert parameters to the format expected by Argo
     const argoParameters = [];
     
-    for (const [key, value] of Object.entries(parameters || {})) {
+    for (const [key, value] of Object.entries(workflowParams)) {
       argoParameters.push({
         name: key,
         value: value.toString()
@@ -108,7 +133,7 @@ exports.createWorkflow = async (req, res, next) => {
     
     // Create Argo workflow from template
     console.log(`[Workflow] Creating workflow "${name}" from template "${templateName}"`);
-    console.log('[Workflow] Parameters:', parameters);
+    console.log('[Workflow] Parameters:', workflowParams);
     console.log('[Workflow] Argo parameters:', argoParameters);
     
     const argoWorkflow = {
@@ -144,7 +169,7 @@ exports.createWorkflow = async (req, res, next) => {
       description,
       templateName,
       argoWorkflowName: result.metadata.name,
-      parameters: parameters || {},
+      parameters: workflowParams,
       status: 'Pending',
       createdBy: req.user._id
     });

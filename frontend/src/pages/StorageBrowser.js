@@ -5,9 +5,13 @@ import {
   CardContent,
   Grid,
   Typography,
+  Tabs,
+  Tab,
+  Alert,
 } from '@mui/material';
 import StorageService from '../services/storage.service';
 import { useNotification } from '../contexts/NotificationContext';
+import { useAuth } from '../contexts/AuthContext';
 import BucketSelector from '../components/storage/BucketSelector';
 import StorageFileList from '../components/storage/StorageFileList';
 import FileUploader from '../components/storage/FileUploader';
@@ -18,12 +22,15 @@ const DEFAULT_BUCKETS = ['pipeline-runner-artifacts'];
 
 function StorageBrowser() {
   const { showSuccess, showError } = useNotification();
+  const { user } = useAuth();
+  const userId = user?._id;
   
   const [selectedBucket, setSelectedBucket] = useState(DEFAULT_BUCKETS[0]);
   const [currentPrefix, setCurrentPrefix] = useState('');
   const [objects, setObjects] = useState([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [selectedTab, setSelectedTab] = useState(0);
   
   // File upload state
   const [file, setFile] = useState(null);
@@ -33,10 +40,15 @@ function StorageBrowser() {
     if (!selectedBucket) {
       setSelectedBucket(DEFAULT_BUCKETS[0]);
     }
-  }, [selectedBucket]);
+    
+    // Set initial prefix based on user ID
+    if (userId && currentPrefix === '') {
+      handleTabChange(null, selectedTab);
+    }
+  }, [selectedBucket, userId]);
   
   useEffect(() => {
-    if (selectedBucket) {
+    if (selectedBucket && currentPrefix) {
       fetchObjects();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -60,7 +72,18 @@ function StorageBrowser() {
   
   const handleBucketChange = (event) => {
     setSelectedBucket(event.target.value);
-    setCurrentPrefix('');
+    handleTabChange(null, selectedTab);
+  };
+  
+  const handleTabChange = (event, newValue) => {
+    setSelectedTab(newValue);
+    
+    // Set prefix based on selected tab
+    if (newValue === 0 && userId) { // My Files tab
+      setCurrentPrefix(`${userId}/`);
+    } else if (newValue === 1) { // Public Files tab
+      setCurrentPrefix('public/');
+    }
   };
   
   const handleFileChange = (event) => {
@@ -77,18 +100,27 @@ function StorageBrowser() {
       return;
     }
     
+    // Determine if we need to add an input/ or output/ subfolder
+    let targetPrefix = currentPrefix;
+    if (!targetPrefix.endsWith('input/') && !targetPrefix.endsWith('output/')) {
+      // Default to input/ if not already in a specific subfolder
+      targetPrefix = `${targetPrefix}${targetPrefix.endsWith('/') ? '' : '/'}input/`;
+    }
+    
     setUploading(true);
     try {
-      const fullObjectName = currentPrefix + objectName;
+      const fullObjectName = targetPrefix + objectName;
       await StorageService.uploadFile(file, selectedBucket, fullObjectName);
       
       showSuccess('File uploaded successfully');
       setFile(null);
       setObjectName('');
+      // Navigate to the folder where the file was uploaded
+      setCurrentPrefix(targetPrefix);
       fetchObjects();
     } catch (error) {
       console.error('Failed to upload file:', error);
-      showError('Failed to upload file');
+      showError(error.response?.data?.message || 'Failed to upload file');
     } finally {
       setUploading(false);
     }
@@ -135,10 +167,18 @@ function StorageBrowser() {
     
     if (lastSlashIndex >= 0) {
       // Navigate to parent folder
-      setCurrentPrefix(prefixWithoutTrailingSlash.substring(0, lastSlashIndex + 1));
+      const newPrefix = prefixWithoutTrailingSlash.substring(0, lastSlashIndex + 1);
+      
+      // If going back would take us out of the allowed prefixes, reset to the tab's root
+      if ((selectedTab === 0 && userId && !newPrefix.startsWith(`${userId}/`)) ||
+          (selectedTab === 1 && !newPrefix.startsWith('public/'))) {
+        handleTabChange(null, selectedTab);
+      } else {
+        setCurrentPrefix(newPrefix);
+      }
     } else {
-      // Navigate to root
-      setCurrentPrefix('');
+      // Navigate to tab's root
+      handleTabChange(null, selectedTab);
     }
   };
   
@@ -159,6 +199,22 @@ function StorageBrowser() {
                 onRefresh={navigateUp}
                 currentPrefix={currentPrefix}
               />
+              
+              <Tabs
+                value={selectedTab}
+                onChange={handleTabChange}
+                variant="fullWidth"
+                sx={{ mb: 2 }}
+              >
+                <Tab label="My Files" />
+                <Tab label="Public Files" />
+              </Tabs>
+              
+              {!currentPrefix && (
+                <Alert severity="info" sx={{ mb: 2 }}>
+                  Please select a storage location to view files.
+                </Alert>
+              )}
               
               <StorageFileList 
                 loading={loading}
