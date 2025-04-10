@@ -21,6 +21,7 @@ import {
 } from '@mui/material';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
+import yaml from 'js-yaml';
 import TemplateService from '../services/template.service';
 import { useNotification } from '../contexts/NotificationContext';
 
@@ -32,6 +33,32 @@ function TemplateEdit() {
   const [template, setTemplate] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  
+  // Function to extract parameters from YAML template
+  const extractParametersFromYAML = (yamlContent) => {
+    try {
+      const parsedYAML = yaml.load(yamlContent);
+      
+      // Check if this is a valid Argo Workflow YAML with parameters
+      if (!parsedYAML || !parsedYAML.spec) return [];
+      
+      // Extract parameters from workflow arguments
+      const workflowParams = parsedYAML.spec.arguments?.parameters || [];
+      
+      // Map Argo parameters to our application format
+      return workflowParams.map(param => ({
+        name: param.name,
+        description: param.description || '',
+        type: 'string', // Default to string type
+        default: param.value || '',
+        required: !param.value // If no default value is provided, assume it's required
+      }));
+    } catch (error) {
+      console.error('Error parsing YAML:', error);
+      showError('Failed to parse YAML template');
+      return [];
+    }
+  };
   
   const fetchTemplate = async () => {
     setLoading(true);
@@ -71,7 +98,31 @@ function TemplateEdit() {
     onSubmit: async (values) => {
       setSubmitting(true);
       try {
-        await TemplateService.updateTemplate(id, values);
+        // Extract parameters from YAML before submission
+        const extractedParams = extractParametersFromYAML(values.template);
+        
+        // Merge extracted parameters with user-defined ones
+        // We keep user params that don't exist in the YAML and add new ones from YAML
+        const existingParamNames = values.parameters.map(p => p.name);
+        const yamlParamNames = extractedParams.map(p => p.name);
+        
+        // Keep existing user parameters
+        let mergedParams = [...values.parameters];
+        
+        // Add new parameters from YAML that don't exist in user params
+        extractedParams.forEach(yamlParam => {
+          if (!existingParamNames.includes(yamlParam.name)) {
+            mergedParams.push(yamlParam);
+          }
+        });
+        
+        // Submit with the merged parameters
+        const dataToSubmit = {
+          ...values,
+          parameters: mergedParams
+        };
+        
+        await TemplateService.updateTemplate(id, dataToSubmit);
         
         showSuccess('Template updated successfully');
         navigate(`/templates/${id}`);
@@ -214,7 +265,7 @@ function TemplateEdit() {
             </Typography>
             <Divider sx={{ mb: 3 }} />
             
-            <Box mb={2}>
+            <Box mb={2} display="flex" gap={2}>
               <Button
                 variant="outlined"
                 component="label"
@@ -230,12 +281,65 @@ function TemplateEdit() {
                       const file = e.target.files[0];
                       const reader = new FileReader();
                       reader.onload = (evt) => {
-                        formik.setFieldValue('template', evt.target.result);
+                        const yamlContent = evt.target.result;
+                        formik.setFieldValue('template', yamlContent);
+                        
+                        // Extract parameters from YAML
+                        const extractedParams = extractParametersFromYAML(yamlContent);
+                        
+                        // Only update parameters if we found some in the YAML
+                        if (extractedParams.length > 0) {
+                          if (formik.values.parameters.length > 0) {
+                            const confirmed = window.confirm(
+                              `Found ${extractedParams.length} parameters in the template. Do you want to replace your existing ${formik.values.parameters.length} parameters?`
+                            );
+                            
+                            if (confirmed) {
+                              formik.setFieldValue('parameters', extractedParams);
+                              showSuccess(`Updated parameters from template`);
+                            }
+                          } else {
+                            formik.setFieldValue('parameters', extractedParams);
+                            showSuccess(`Extracted ${extractedParams.length} parameters from template`);
+                          }
+                        }
                       };
                       reader.readAsText(file);
                     }
                   }}
                 />
+              </Button>
+              
+              <Button
+                variant="outlined"
+                onClick={() => {
+                  if (formik.values.template) {
+                    const extractedParams = extractParametersFromYAML(formik.values.template);
+                    
+                    if (extractedParams.length > 0) {
+                      // If user already has parameters, ask for confirmation before overwriting
+                      if (formik.values.parameters.length > 0) {
+                        const confirmed = window.confirm(
+                          `Found ${extractedParams.length} parameters in the template. Do you want to replace your existing ${formik.values.parameters.length} parameters?`
+                        );
+                        
+                        if (confirmed) {
+                          formik.setFieldValue('parameters', extractedParams);
+                          showSuccess(`Updated parameters from template`);
+                        }
+                      } else {
+                        formik.setFieldValue('parameters', extractedParams);
+                        showSuccess(`Extracted ${extractedParams.length} parameters from template`);
+                      }
+                    } else {
+                      showError('No parameters found in the template');
+                    }
+                  } else {
+                    showError('Please enter a template first');
+                  }
+                }}
+              >
+                Extract Parameters
               </Button>
             </Box>
             <TextField
@@ -244,7 +348,24 @@ function TemplateEdit() {
               name="template"
               label="Template YAML"
               value={formik.values.template}
-              onChange={formik.handleChange}
+              onChange={(e) => {
+                formik.handleChange(e);
+                
+                // Add debounce for parameter extraction from pasted YAML
+                if (e.target.value.trim()) {
+                  const yamlContent = e.target.value;
+                  const currentParams = formik.values.parameters;
+                  
+                  // Only try to extract parameters if no parameters exist
+                  if (currentParams.length === 0) {
+                    const extractedParams = extractParametersFromYAML(yamlContent);
+                    if (extractedParams.length > 0) {
+                      formik.setFieldValue('parameters', extractedParams);
+                      showSuccess(`Extracted ${extractedParams.length} parameters from template`);
+                    }
+                  }
+                }
+              }}
               error={formik.touched.template && Boolean(formik.errors.template)}
               helperText={(formik.touched.template && formik.errors.template) || "You can paste YAML directly or upload a file using the button above"}
               multiline

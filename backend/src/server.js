@@ -125,7 +125,7 @@ app.use('/api/storage', storageRoutes);
 app.use('/', swaggerUi.serve, swaggerUi.setup(swaggerSpecs, {
   explorer: true,
   customCss: '.swagger-ui .topbar { display: none }',
-  customSiteTitle: "Scientific Workflow API Documentation"
+  customSiteTitle: "Pipeline Runner API Documentation"
 }));
 
 // Health check endpoint
