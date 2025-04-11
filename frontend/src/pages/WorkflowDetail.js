@@ -71,7 +71,7 @@ function WorkflowDetail() {
           showSuccess(`Workflow status changed to ${updatedWorkflow.status}`);
         }
         
-        setWorkflow(updatedWorkflow);
+        setWorkflow(prevWorkflow => ({...updatedWorkflow, parameters: prevWorkflow.parameters}));
       }
     };
     
@@ -86,7 +86,7 @@ function WorkflowDetail() {
         
         // If the data contains our workflow data, update it
         if (data.workflowData && data.workflowData._id === id) {
-          setWorkflow(data.workflowData);
+          setWorkflow(prevWorkflow => ({...data.workflowData, parameters: prevWorkflow.parameters}));
         } else {
           // If we just got an update but no workflow data, refresh to get latest
           fetchWorkflow();
