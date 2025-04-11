@@ -1,5 +1,6 @@
 - Fix suspend/resume status updates
 - Surface error messages
+- Rethink storage per user / path definitios
 - Check about python modules as input (last in the list of priorities)
 - Check if we can delete templates/workflows from the DB using events (so that they are deleted from the db if they are deleted in argo)
 - Check how can we fix
