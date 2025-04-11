@@ -97,19 +97,35 @@ mongoose.connect(config.mongodb.uri, {
   }
 })();
 
-// Apply middlewares
+// Apply middlewares with more permissive CORS settings
 app.use(cors({
-  origin: config.corsOrigin,
+  // Allow requests from any origin in development
+  origin: config.env === 'development' ? '*' : config.corsOrigin,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+  exposedHeaders: ['Content-Disposition', 'Content-Length'],
+  credentials: true
 }));
+
 // Disable helmet CSP in development
 app.use(helmet({
-  contentSecurityPolicy: false
+  contentSecurityPolicy: false,
+  // Disable cross-origin restrictions for downloads
+  crossOriginResourcePolicy: { policy: 'cross-origin' }
 }));
 app.use(morgan('combined'));
+// Middleware for parsing JSON and form data
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Add middleware to log request information for debugging
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  if (req.method === 'POST') {
+    console.log('Request body:', req.body);
+  }
+  next();
+});
 
 // Initialize Passport
 setupPassport();

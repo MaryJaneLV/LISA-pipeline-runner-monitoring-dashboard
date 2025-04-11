@@ -18,17 +18,18 @@ const StorageService = {
   },
 
   /**
-   * Get a presigned URL for an object
+   * Get the download URL for an object
    * @param {String} bucket - Bucket name
    * @param {String} objectName - Object name
-   * @param {Number} expires - Expiry time in seconds (optional)
-   * @returns {Promise<Object>} - URL data
+   * @returns {String} - Direct download URL
    */
-  getPresignedUrl: async (bucket, objectName, expires = 3600) => {
-    const response = await api.get('/api/storage/presigned-url', {
-      params: { bucket, objectName, expires }
-    });
-    return response.data;
+  getDownloadUrl: (bucket, objectName) => {
+    // Use the domain from the current window location, but with the specific backend port
+    // This ensures we're using the correct host regardless of how the frontend is accessed
+    const url = new URL(window.location.href);
+    const backendPort = '30083'; // This is the NodePort used by the backend service
+    
+    return `${url.protocol}//${url.hostname}:${backendPort}/api/storage/download?bucket=${bucket}&objectName=${encodeURIComponent(objectName)}`;
   },
 
   /**

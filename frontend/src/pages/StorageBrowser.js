@@ -118,13 +118,58 @@ function StorageBrowser() {
   
   const handleDownload = async (objectName) => {
     try {
-      const result = await StorageService.getPresignedUrl(DEFAULT_BUCKET, objectName);
+      showSuccess('Starting download...');
       
-      // Open the URL in a new tab
-      window.open(result.url, '_blank');
+      // Make sure the object name includes the correct user prefix if needed
+      let fullObjectName = objectName;
+      
+      // If the path doesn't already include the user ID and isn't a public file,
+      // ensure it has the proper user prefix for authorization
+      if (userId && !objectName.includes(`${userId}/`) && !objectName.startsWith('public/')) {
+        // Two cases:
+        // 1. Path already has the currentPrefix (e.g., "userId/input/file.csv")
+        // 2. Path is relative to currentPrefix (e.g., just "file.csv" while in the "userId/input/" folder)
+        
+        if (objectName.startsWith(currentPrefix)) {
+          // Case 1: Path already has the prefix
+          fullObjectName = objectName;
+        } else {
+          // Case 2: Path is relative to current prefix
+          fullObjectName = `${currentPrefix}${objectName}`;
+        }
+        
+        console.log('- Adjusted path for authorization:', fullObjectName);
+      }
+      
+      const filename = fullObjectName.split('/').pop();
+      
+      const token = localStorage.getItem('token');
+      
+      const downloadUrl = StorageService.getDownloadUrl(DEFAULT_BUCKET, fullObjectName);
+      
+      try {
+        const a = document.createElement('a');
+        a.href = downloadUrl;
+        a.target = '_blank'; 
+        
+        // Add token to URL if available
+        if (token) {
+          // Add token as a query parameter instead of header
+          const separator = downloadUrl.includes('?') ? '&' : '?';
+          a.href = `${downloadUrl}${separator}token=${encodeURIComponent(token)}`;
+        }
+        
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        showSuccess(`Download started for "${filename}"`);
+      } catch (fetchError) {
+        console.error('Fetch download failed:', fetchError);
+        showError(`Download failed: ${fetchError.message}`);
+      }
     } catch (error) {
-      console.error('Failed to generate download link:', error);
-      showError('Failed to download file');
+      console.error('Failed to start download:', error);
+      showError('Download failed. Please check server logs.');
     }
   };
   

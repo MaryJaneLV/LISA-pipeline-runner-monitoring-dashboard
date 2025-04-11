@@ -183,55 +183,21 @@ class MinioService {
   }
 
   /**
-   * Get a presigned URL for an object
-   * @param {String} bucketName - The bucket name
-   * @param {String} objectName - The object name
-   * @param {Number} expires - The expiry time in seconds (optional)
-   * @returns {Promise<String>} - The presigned URL
-   */
-  async getPresignedUrl(bucketName, objectName, expires = 3600) {
-    try {
-      return await this.client.presignedGetObject(bucketName, objectName, expires);
-    } catch (error) {
-      throw new Error(`Error generating presigned URL: ${error.message}`);
-    }
-  }
-  
-  /**
    * Get a direct URL for an object
    * @param {String} bucketName - The bucket name
    * @param {String} objectName - The object name
    * @returns {String} - The object URL
    */
   getObjectUrl(bucketName, objectName) {
-    const baseUrl = `${config.minio.useSSL ? 'https' : 'http'}://${config.minio.endPoint}:${config.minio.port}`;
-    return `${baseUrl}/${bucketName}/${objectName}`;
-  }
-  
-  /**
-   * Apply a lifecycle policy to a bucket
-   * @param {String} bucketName - The bucket name
-   * @param {Number} days - Days to keep objects
-   * @returns {Promise<void>}
-   */
-  async setLifecyclePolicy(bucketName, days = 30) {
-    const lifecycleConfig = {
-      Rule: [
-        {
-          ID: "Expire old objects",
-          Status: "Enabled",
-          Expiration: {
-            Days: days
-          }
-        }
-      ]
-    };
+    // Use public host and port if available
+    const host = process.env.PUBLIC_MINIO_HOST || 'localhost';
+    const port = process.env.PUBLIC_MINIO_PORT || config.minio.port;
     
-    try {
-      await this.client.setBucketLifecycle(bucketName, lifecycleConfig);
-    } catch (error) {
-      throw new Error(`Error setting lifecycle policy: ${error.message}`);
-    }
+    // Make sure we're using IPv4 for localhost (not IPv6 ::1)
+    const hostToUse = host === 'localhost' ? '127.0.0.1' : host;
+    
+    const baseUrl = `${config.minio.useSSL ? 'https' : 'http'}://${hostToUse}:${port}`;
+    return `${baseUrl}/${bucketName}/${objectName}`;
   }
 }
 

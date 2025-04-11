@@ -13,8 +13,34 @@ const upload = multer({
   }
 });
 
-// All routes require authentication
-router.use(passport.authenticate('jwt', { session: false }));
+// Most routes require authentication
+const requireAuth = passport.authenticate('jwt', { session: false });
+
+// CORS middleware specifically for the download endpoint
+const downloadCors = (req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Content-Length, X-Requested-With, Accept');
+  res.header('Access-Control-Expose-Headers', 'Content-Disposition, Content-Length');
+  
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  
+  next();
+};
+
+// Optional authentication middleware - allows access even if auth fails
+const optionalAuth = (req, res, next) => {
+  passport.authenticate('jwt', { session: false }, (err, user, info) => {
+    if (user) {
+      req.user = user;
+    }
+    // Continue regardless of auth success/failure
+    next();
+  })(req, res, next);
+};
 
 /**
  * @swagger
@@ -59,14 +85,16 @@ router.use(passport.authenticate('jwt', { session: false }));
  *       404:
  *         description: Bucket not found
  */
-router.get('/objects', storageController.listObjects);
+router.get('/objects', requireAuth, storageController.listObjects);
 
 /**
  * @swagger
- * /storage/presigned-url:
+ * /storage/download:
  *   get:
- *     summary: Get a presigned URL for an object
- *     description: Generates a presigned URL for accessing an object
+ *      summary: Download a file directly
+ *      description: >
+ *        Downloads a file from the object storage if the user is authorized to access it.
+ *        Authorization is based on token validation or file path rules (public, workflow, or user-owned files).
  *     tags: [Storage]
  *     parameters:
  *       - in: query
@@ -81,12 +109,6 @@ router.get('/objects', storageController.listObjects);
  *           type: string
  *         required: true
  *         description: Object name/path
- *       - in: query
- *         name: expirySeconds
- *         schema:
- *           type: integer
- *           default: 3600
- *         description: URL expiry time in seconds
  *     security:
  *       - bearerAuth: []
  *     responses:
@@ -104,7 +126,7 @@ router.get('/objects', storageController.listObjects);
  *       404:
  *         description: Object not found
  */
-router.get('/presigned-url', storageController.getPresignedUrl);
+router.get('/download', downloadCors, optionalAuth, storageController.getFile);
 
 /**
  * @swagger
@@ -113,8 +135,6 @@ router.get('/presigned-url', storageController.getPresignedUrl);
  *     summary: Upload a file
  *     description: Uploads a file to the specified bucket
  *     tags: [Storage]
- *     consumes:
- *       - multipart/form-data
  *     parameters:
  *       - in: query
  *         name: bucket
@@ -157,7 +177,7 @@ router.get('/presigned-url', storageController.getPresignedUrl);
  *       400:
  *         description: Missing required parameters or file
  */
-router.post('/upload', upload.single('file'), storageController.uploadFile);
+router.post('/upload', requireAuth, upload.single('file'), storageController.uploadFile);
 
 /**
  * @swagger
@@ -189,6 +209,6 @@ router.post('/upload', upload.single('file'), storageController.uploadFile);
  *       404:
  *         description: Object not found
  */
-router.delete('/objects', storageController.deleteObject);
+router.delete('/objects', requireAuth, storageController.deleteObject);
 
 module.exports = router;

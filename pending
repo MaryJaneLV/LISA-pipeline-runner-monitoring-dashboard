@@ -1,6 +1,5 @@
 - Fix suspend/resume status updates
 - Surface error messages
-- Fix Workflow Outputs - File not authorized to access
 - Check about python modules as input (last in the list of priorities)
 - Check if we can delete templates/workflows from the DB using events (so that they are deleted from the db if they are deleted in argo)
 - Check how can we fix
