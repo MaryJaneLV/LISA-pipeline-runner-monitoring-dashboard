@@ -13,19 +13,15 @@ export const processObjects = (objectsList, currentPrefix) => {
   const files = [];
   
   objectsList.forEach(obj => {
-    // Remove current prefix from name
     const name = obj.name.startsWith(currentPrefix) 
       ? obj.name.substring(currentPrefix.length) 
       : obj.name;
     
-    // Skip if empty
     if (!name) return;
     
-    // Check if it's a folder (has '/' in it)
     const slashIndex = name.indexOf('/');
     
     if (slashIndex > 0) {
-      // It's a folder
       const folderName = name.substring(0, slashIndex + 1);
       
       if (!folders.has(folderName)) {
@@ -38,7 +34,6 @@ export const processObjects = (objectsList, currentPrefix) => {
         });
       }
     } else {
-      // It's a file
       files.push({
         ...obj,
         name,
@@ -47,12 +42,9 @@ export const processObjects = (objectsList, currentPrefix) => {
     }
   });
   
-  // Combine folders and files, sorted by name
   return [...Array.from(folders.values()), ...files].sort((a, b) => {
-    // Folders first
     if (a.isFolder && !b.isFolder) return -1;
     if (!a.isFolder && b.isFolder) return 1;
-    // Then by name
     return a.name.localeCompare(b.name);
   });
 };

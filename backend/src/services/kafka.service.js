@@ -13,10 +13,6 @@ class KafkaService {
     this.isConnected = false;
   }
 
-  /**
-   * Connect to Kafka
-   * @returns {Promise<void>}
-   */
   async connect() {
     if (!this.isConnected) {
       await this.producer.connect();
@@ -25,10 +21,6 @@ class KafkaService {
     }
   }
 
-  /**
-   * Disconnect from Kafka
-   * @returns {Promise<void>}
-   */
   async disconnect() {
     if (this.isConnected) {
       await this.producer.disconnect();
@@ -37,11 +29,6 @@ class KafkaService {
     }
   }
 
-  /**
-   * Publish a workflow submission
-   * @param {Object} data - The workflow status data
-   * @returns {Promise<void>}
-   */
   async publishWorkflowSubmission(data) {
     try {
       await this.ensureConnection();
@@ -58,12 +45,6 @@ class KafkaService {
     }
   }
 
-  /**
-   * Publish an event
-   * @param {String} event - The event type
-   * @param {Object} data - The event data
-   * @returns {Promise<void>}
-   */
   async publishEvent(event, data) {
     try {
       await this.ensureConnection();
@@ -80,11 +61,6 @@ class KafkaService {
     }
   }
 
-  /**
-   * Create consumer for workflow status updates
-   * @param {Function} callback - The callback to handle messages
-   * @returns {Promise<void>}
-   */
   async subscribeToWorkflowStatus(callback) {
     await this.consumer.connect();
     await this.consumer.subscribe({ topic: 'workflow-status-raw', fromBeginning: false });
@@ -110,12 +86,6 @@ class KafkaService {
     console.log('Subscribed to workflow-status-raw topic');
   }
 
-  /**
-   * Create consumer for custom events
-   * @param {String} event - The event type to subscribe to
-   * @param {Function} callback - The callback to handle messages
-   * @returns {Promise<void>}
-   */
   async subscribeToEvent(event, callback) {
     const consumer = this.kafka.consumer({ groupId: `event-${event}-consumer` });
     await consumer.connect();
@@ -136,12 +106,6 @@ class KafkaService {
     return consumer;
   }
 
-  /**
-   * Store a key-value pair (using a dedicated topic with key)
-   * @param {String} key - The key
-   * @param {String|Object} value - The value
-   * @returns {Promise<void>}
-   */
   async set(key, value) {
     try {
       await this.ensureConnection();
@@ -166,10 +130,6 @@ class KafkaService {
     }
   }
 
-  /**
-   * Ensure connection is established
-   * @returns {Promise<void>}
-   */
   async ensureConnection() {
     if (!this.isConnected) {
       await this.connect();
