@@ -63,7 +63,6 @@ const createTemplateSchema = Joi.object({
     })
   ),
   isPublic: Joi.boolean(),
-  category: Joi.string().valid('Data Processing', 'Machine Learning', 'Visualization', 'Other')
 });
 
 // Schema for updating a template
@@ -80,7 +79,6 @@ const updateTemplateSchema = Joi.object({
     })
   ),
   isPublic: Joi.boolean(),
-  category: Joi.string().valid('Data Processing', 'Machine Learning', 'Visualization', 'Other')
 }).min(1);
 
 module.exports = {
