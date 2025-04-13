@@ -1,6 +1,5 @@
 - Fix suspend/resume status updates
-- Rethink storage per user / path definitios
-- Check if we can make input/output selectable
+- Fix resubmit workflow
 - Check if we can delete templates/workflows from the DB using events (so that they are deleted from the db if they are deleted in argo)
 - Check how can we fix
   - Name stored in argo different than the one we use (for templates). This causes that sometimes when we want create a workflow argo send back that it can't find the template

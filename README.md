@@ -152,6 +152,6 @@ To customize the deployment, modify the following:
 - `kubernetes/` - Kubernetes manifests
 - `docker-compose.yml` - Docker Compose configuration
 
-## License
+NOTE: 
 
-MIT
+ALL WORKFLOWS/WORKFLOW TEMPLATE MUST DEFINE A artifactOutputPath PARAMETER

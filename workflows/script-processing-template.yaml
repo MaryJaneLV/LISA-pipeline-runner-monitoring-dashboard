@@ -13,19 +13,20 @@ spec:
         value: "2"
         description: Factor to multiply by (if using multiply operation)
       - name: numbersInput
-        value: "input/numbers.csv"
+        value: "public/input/numbers.csv"
         description: numbers to be processed
       - name: artifactOutputPath
+        value: "public/output"
         description: User-specific output path
       - name: scriptKey
         description: S3 key for the script to use
-        value: "scripts/number-processing/process.py"
+        value: "public/scripts/number-processing/process.py"
       - name: dockerfileKey
         description: S3 key for the Dockerfile (optional)
-        value: "scripts/number-processing/Dockerfile"
+        value: "public/scripts/number-processing/Dockerfile"
       - name: requirementsKey
         description: S3 key for requirements.txt (optional)
-        value: "scripts/number-processing/requirements.txt"
+        value: "public/scripts/number-processing/requirements.txt"
 
   templates:
     - name: process-with-script
