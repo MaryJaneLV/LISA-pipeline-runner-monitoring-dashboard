@@ -24,6 +24,52 @@ import yaml from 'js-yaml';
 import TemplateService from '../services/template.service';
 import { useNotification } from '../contexts/NotificationContext';
 
+// Replace input parameter placeholders inside artifacts
+function replaceParamsInArtifacts(obj, fromParam, toParam) {
+  if (typeof obj !== 'object' || obj === null) return;
+  if (Array.isArray(obj)) {
+    obj.forEach(item => replaceParamsInArtifacts(item, fromParam, toParam));
+    return;
+  }
+
+  for (const [key, value] of Object.entries(obj)) {
+    if (typeof value === 'string') {
+      obj[key] = value.replaceAll(`{{inputs.parameters.${fromParam}}}`, `{{inputs.parameters.${toParam}}}`);
+    } else {
+      replaceParamsInArtifacts(value, fromParam, toParam);
+    }
+  }
+}
+
+function findArtifacts(obj, parentKey = null, inputFileParams, outputRefParams) {
+  if (typeof obj !== 'object' || obj === null) return;
+
+  if (Array.isArray(obj)) {
+    obj.forEach(item => findArtifacts(item, parentKey, inputFileParams, outputRefParams));
+    return;
+  }
+
+  for (const [key, value] of Object.entries(obj)) {
+    if (key === 'artifacts' && Array.isArray(value)) {
+      const isInput = parentKey === 'inputs';
+      const isOutput = parentKey === 'outputs';
+
+      value.forEach(artifact => {
+        const s3Key = artifact?.s3?.key;
+        const matches = s3Key?.match(/{{inputs\.parameters\.([^}]+)}}/g);
+        matches?.forEach(match => {
+          const paramName = match.match(/{{inputs\.parameters\.([^}]+)}}/)?.[1];
+          if (!paramName) return;
+          if (isInput) inputFileParams.add(paramName);
+          if (isOutput) outputRefParams.add(paramName);
+        });
+      });
+    } else {
+      findArtifacts(value, key, inputFileParams, outputRefParams);
+    }
+  }
+}
+
 function TemplateCreate() {
   const navigate = useNavigate();
   const { showSuccess, showError, showInfo } = useNotification();
@@ -35,47 +81,63 @@ function TemplateCreate() {
     try {
       const parsedYAML = yaml.load(yamlContent);
       if (!parsedYAML) return { templateName: null, parameters: [] };
-      
-      // Extract template name from metadata
+  
       const templateName = parsedYAML.metadata?.name;
-      
-      if (!parsedYAML.spec) return { templateName, parameters: [] };
+      const workflowParams = parsedYAML.spec?.arguments?.parameters || [];
+      const templates = parsedYAML.spec?.templates || [];
   
-      const workflowParams = parsedYAML.spec.arguments?.parameters || [];
-      const templates = parsedYAML.spec.templates || [];
-  
-      // Collect all S3-related parameter references
       const inputFileParams = new Set();
       const outputRefParams = new Set();
   
-      for (const template of templates) {
-        // Input artifacts
-        template.inputs?.artifacts?.forEach(artifact => {
-          if (artifact.s3?.key) {
-            const matches = artifact.s3.key.match(/{{inputs\.parameters\.([^}]+)}}/g);
-            matches?.forEach(match => {
-              const paramName = match.match(/{{inputs\.parameters\.([^}]+)}}/)?.[1];
-              if (paramName) inputFileParams.add(paramName);
-            });
-          }
-        });
+      // Build a lookup of templates by name
+      const templateMap = Object.fromEntries(
+        templates.map(t => [t.name, t])
+      );
   
-        // Output artifacts
-        template.outputs?.artifacts?.forEach(artifact => {
-          if (artifact.s3?.key) {
-            const matches = artifact.s3.key.match(/{{inputs\.parameters\.([^}]+)}}/g);
-            matches?.forEach(match => {
-              const paramName = match.match(/{{inputs\.parameters\.([^}]+)}}/)?.[1];
-              if (paramName) outputRefParams.add(paramName);
-            });
+      // Resolve which parameters flow into which templates
+      const resolveTaskParams = (taskArgs = [], workflowParamNames = new Set()) => {
+        const resolved = {};
+        for (const { name, value } of taskArgs) {
+          const match = value?.match(/{{inputs\.parameters\.([^}]+)}}/);
+          if (match) {
+            const workflowParam = match[1];
+            if (workflowParamNames.has(workflowParam)) {
+              resolved[name] = workflowParam;
+            }
           }
-        });
+        }
+        return resolved;
+      };
+  
+      // Collect parameter flow from the main DAG template
+      const dagTemplate = templates.find(t => t.name === parsedYAML.spec.entrypoint);
+      const workflowParamNames = new Set(workflowParams.map(p => p.name));
+  
+      if (dagTemplate?.dag?.tasks) {
+        for (const task of dagTemplate.dag.tasks) {
+          const resolved = resolveTaskParams(task.arguments?.parameters, workflowParamNames);
+          const taskTemplate = templateMap[task.template];
+          if (!taskTemplate) continue;
+  
+          // Now simulate the template execution with resolved workflow params
+          const simulated = JSON.parse(JSON.stringify(taskTemplate)); // deep clone
+          for (const [templateParam, workflowParam] of Object.entries(resolved)) {
+            // Replace {{inputs.parameters.templateParam}} with workflowParam
+            replaceParamsInArtifacts(simulated, templateParam, workflowParam);
+          }
+  
+          findArtifacts(simulated, null, inputFileParams, outputRefParams);
+        }
+      }
+      // For non-DAG templates, just find artifacts directly
+      for (const template of templates) {
+        findArtifacts(template, null, inputFileParams, outputRefParams);
       }
   
       const parameters = workflowParams.map(param => {
         let type = 'string';
-        if (inputFileParams.has(param.name)) type = 'file';
-        else if (outputRefParams.has(param.name)) type = 'reference';
+        if (outputRefParams.has(param.name)) type = 'reference';
+        else if (inputFileParams.has(param.name)) type = 'file';
   
         return {
           name: param.name,
@@ -85,9 +147,8 @@ function TemplateCreate() {
           required: !param.value
         };
       });
-      
-      return { templateName, parameters };
   
+      return { templateName, parameters };
     } catch (error) {
       console.error('Error parsing YAML:', error);
       showError(error.message ? `YAML parsing error: ${error.message}` : error);
