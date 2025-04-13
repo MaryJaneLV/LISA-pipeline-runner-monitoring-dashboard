@@ -25,15 +25,20 @@ import { useNotification } from '../contexts/NotificationContext';
 
 function TemplateCreate() {
   const navigate = useNavigate();
-  const { showSuccess, showError } = useNotification();
+  const { showSuccess, showError, showInfo } = useNotification();
   
   const [submitting, setSubmitting] = useState(false);
   
-  // Function to extract parameters from YAML template
-  const extractParametersFromYAML = (yamlContent) => {
+  // Function to extract template name and parameters from YAML template
+  const extractFromYAML = (yamlContent) => {
     try {
       const parsedYAML = yaml.load(yamlContent);
-      if (!parsedYAML || !parsedYAML.spec) return [];
+      if (!parsedYAML) return { templateName: null, parameters: [] };
+      
+      // Extract template name from metadata
+      const templateName = parsedYAML.metadata?.name;
+      
+      if (!parsedYAML.spec) return { templateName, parameters: [] };
   
       const workflowParams = parsedYAML.spec.arguments?.parameters || [];
       const templates = parsedYAML.spec.templates || [];
@@ -66,7 +71,7 @@ function TemplateCreate() {
         });
       }
   
-      return workflowParams.map(param => {
+      const parameters = workflowParams.map(param => {
         let type = 'string';
         if (inputFileParams.has(param.name)) type = 'file';
         else if (outputRefParams.has(param.name)) type = 'reference';
@@ -79,18 +84,37 @@ function TemplateCreate() {
           required: !param.value
         };
       });
+      
+      return { templateName, parameters };
   
     } catch (error) {
       console.error('Error parsing YAML:', error);
       showError(error.message ? `YAML parsing error: ${error.message}` : error);
-      return [];
+      return { templateName: null, parameters: [] };
     }
   };
   
+  // For backward compatibility
+  const extractParametersFromYAML = (yamlContent) => {
+    return extractFromYAML(yamlContent).parameters;
+  };
+  
   const validationSchema = Yup.object({
-    name: Yup.string().required('Name is required'),
     description: Yup.string(),
-    template: Yup.string().required('Template definition is required'),
+    template: Yup.string().required('Template definition is required')
+      .test(
+        'has-metadata-name',
+        'Template must contain a valid metadata.name field',
+        function(value) {
+          if (!value) return true; // Let the required validation handle empty case
+          try {
+            const parsed = yaml.load(value);
+            return Boolean(parsed?.metadata?.name);
+          } catch (e) {
+            return false;
+          }
+        }
+      ),
     isPublic: Yup.boolean()
   });
   
@@ -106,8 +130,14 @@ function TemplateCreate() {
     onSubmit: async (values) => {
       setSubmitting(true);
       try {
-        // Extract parameters from YAML before submission
-        const extractedParams = extractParametersFromYAML(values.template);
+        // Get required metadata.name from template YAML
+        const { templateName, parameters: extractedParams } = extractFromYAML(values.template);
+        
+        if (!templateName) {
+          showError('Template YAML must include a metadata.name field');
+          setSubmitting(false);
+          return;
+        }
         
         // Merge extracted parameters with user-defined ones
         // We keep user params that don't exist in the YAML and add new ones from YAML
@@ -123,9 +153,10 @@ function TemplateCreate() {
           }
         });
         
-        // Submit with the merged parameters
+        // Submit with the metadata.name from YAML and merged parameters
         const dataToSubmit = {
           ...values,
+          name: templateName,  // Always use the name from metadata.name
           parameters: mergedParams
         };
         
@@ -184,12 +215,10 @@ function TemplateCreate() {
                   fullWidth
                   id="name"
                   name="name"
-                  label="Template Name"
+                  label="Template Name (from metadata.name)"
                   value={formik.values.name}
-                  onChange={formik.handleChange}
-                  error={formik.touched.name && Boolean(formik.errors.name)}
-                  helperText={formik.touched.name && formik.errors.name}
-                  required
+                  disabled
+                  helperText="This field is automatically set from the metadata.name in your YAML template and cannot be edited"
                 />
               </Grid>
               <Grid item xs={12}>
@@ -248,13 +277,21 @@ function TemplateCreate() {
                         const yamlContent = evt.target.result;
                         formik.setFieldValue('template', yamlContent);
                         
-                        // Extract parameters from YAML
-                        const extractedParams = extractParametersFromYAML(yamlContent);
+                        // Extract name and parameters from YAML
+                        const { templateName, parameters } = extractFromYAML(yamlContent);
+                        
+                        // Update template name if found in YAML
+                        if (templateName) {
+                          formik.setFieldValue('name', templateName);
+                          showSuccess(`Template name set to "${templateName}" from metadata.name in YAML`);
+                        } else {
+                          showError('Warning: No metadata.name found in template. The template must include a metadata.name field.');
+                        }
                         
                         // Only update parameters if we found some in the YAML
-                        if (extractedParams.length > 0) {
-                          formik.setFieldValue('parameters', extractedParams);
-                          showSuccess(`Extracted ${extractedParams.length} parameters from template`);
+                        if (parameters.length > 0) {
+                          formik.setFieldValue('parameters', parameters);
+                          showSuccess(`Extracted ${parameters.length} parameters from template`);
                         }
                       };
                       reader.readAsText(file);
@@ -267,25 +304,33 @@ function TemplateCreate() {
                 variant="outlined"
                 onClick={() => {
                   if (formik.values.template) {
-                    const extractedParams = extractParametersFromYAML(formik.values.template);
+                    const { templateName, parameters } = extractFromYAML(formik.values.template);
                     
-                    if (extractedParams.length > 0) {
+                    // Update template name if found
+                    if (templateName) {
+                      formik.setFieldValue('name', templateName);
+                      showSuccess(`Template name set to "${templateName}" from metadata.name in YAML`);
+                    } else {
+                      showError('No metadata.name found in template. The template must include a metadata.name field.');
+                    }
+                    
+                    if (parameters.length > 0) {
                       // If user already has parameters, ask for confirmation before overwriting
                       if (formik.values.parameters.length > 0) {
                         const confirmed = window.confirm(
-                          `Found ${extractedParams.length} parameters in the template. Do you want to replace your existing ${formik.values.parameters.length} parameters?`
+                          `Found ${parameters.length} parameters in the template. Do you want to replace your existing ${formik.values.parameters.length} parameters?`
                         );
                         
                         if (confirmed) {
-                          formik.setFieldValue('parameters', extractedParams);
+                          formik.setFieldValue('parameters', parameters);
                           showSuccess(`Updated parameters from template`);
                         }
                       } else {
-                        formik.setFieldValue('parameters', extractedParams);
-                        showSuccess(`Extracted ${extractedParams.length} parameters from template`);
+                        formik.setFieldValue('parameters', parameters);
+                        showSuccess(`Extracted ${parameters.length} parameters from template`);
                       }
                     } else {
-                      showError('No parameters found in the template');
+                      showInfo('No parameters found in the template');
                     }
                   } else {
                     showError('Please enter a template first');
@@ -304,18 +349,24 @@ function TemplateCreate() {
               onChange={(e) => {
                 formik.handleChange(e);
                 
-                // Add debounce for parameter extraction from pasted YAML
+                // Add debounce for parameter and name extraction from pasted YAML
                 if (e.target.value.trim()) {
                   const yamlContent = e.target.value;
                   const currentParams = formik.values.parameters;
                   
-                  // Only try to extract parameters if no parameters exist or if user explicitly confirms
-                  if (currentParams.length === 0) {
-                    const extractedParams = extractParametersFromYAML(yamlContent);
-                    if (extractedParams.length > 0) {
-                      formik.setFieldValue('parameters', extractedParams);
-                      showSuccess(`Extracted ${extractedParams.length} parameters from template`);
-                    }
+                  // Extract both template name and parameters
+                  const { templateName, parameters } = extractFromYAML(yamlContent);
+                  
+                  // Update template name if found
+                  if (templateName) {
+                    formik.setFieldValue('name', templateName);
+                    showSuccess(`Template name set to "${templateName}" from metadata.name in YAML`);
+                  }
+                  
+                  // Only try to extract parameters if no parameters exist
+                  if (currentParams.length === 0 && parameters.length > 0) {
+                    formik.setFieldValue('parameters', parameters);
+                    showSuccess(`Extracted ${parameters.length} parameters from template`);
                   }
                 }
               }}

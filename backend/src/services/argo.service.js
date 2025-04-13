@@ -263,7 +263,25 @@ class ArgoService {
   async updateWorkflowTemplate(name, template, namespace = config.argo.namespace) {
     try {
       console.log(`[ArgoService] Updating workflow template "${name}" in namespace:`, namespace);
-      console.log('[ArgoService] Template object:', JSON.stringify(template, null, 2));
+      
+      // First, get the current template to get its resourceVersion
+      console.log(`[ArgoService] Fetching current template "${name}" to get resourceVersion`);
+      const currentTemplate = await this.getWorkflowTemplate(name, namespace);
+      
+      if (!currentTemplate) {
+        throw new Error(`Template "${name}" not found`);
+      }
+      
+      const resourceVersion = currentTemplate.metadata.resourceVersion;
+      console.log(`[ArgoService] Got resourceVersion: ${resourceVersion}`);
+      
+      // Ensure template has the resourceVersion in its metadata
+      if (!template.metadata) {
+        template.metadata = {};
+      }
+      template.metadata.resourceVersion = resourceVersion;
+      
+      console.log('[ArgoService] Template object with resourceVersion:', JSON.stringify(template, null, 2));
       
       // According to Argo API documentation, we need to structure the request properly
       // The API expects the template to be in the 'template' field of the request body
