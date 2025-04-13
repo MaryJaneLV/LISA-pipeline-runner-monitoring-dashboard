@@ -39,12 +39,10 @@ userSchema.pre('save', async function(next) {
   next();
 });
 
-// Method to check if password is valid
 userSchema.methods.isValidPassword = async function(password) {
   return await bcrypt.compare(password, this.password);
 };
 
-// Remove password when converting to JSON
 userSchema.methods.toJSON = function() {
   const user = this.toObject();
   delete user.password;

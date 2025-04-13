@@ -3,18 +3,11 @@ const argoService = require('../services/argo.service');
 const createError = require('http-errors');
 const yaml = require('js-yaml');
 
-/**
- * List templates with optional filters
- * @param {Object} req - The request object
- * @param {Object} res - The response object
- * @param {Function} next - The next middleware
- */
 exports.listTemplates = async (req, res, next) => {
   try {
     const { limit = 10, page = 1 } = req.query;
     const skip = (parseInt(page) - 1) * parseInt(limit);
     
-    // Build query
     const query = { 
       $or: [
         { isPublic: true },
@@ -22,10 +15,8 @@ exports.listTemplates = async (req, res, next) => {
       ]
     };
     
-    // Get total count for pagination
     const total = await Template.countDocuments(query);
     
-    // Get templates
     const templates = await Template.find(query)
       .sort({ name: 1 })
       .skip(skip)
@@ -46,12 +37,6 @@ exports.listTemplates = async (req, res, next) => {
   }
 };
 
-/**
- * Get a template by ID
- * @param {Object} req - The request object
- * @param {Object} res - The response object
- * @param {Function} next - The next middleware
- */
 exports.getTemplate = async (req, res, next) => {
   try {
     const template = await Template.findOne({
@@ -72,44 +57,29 @@ exports.getTemplate = async (req, res, next) => {
   }
 };
 
-/**
- * Create a new template
- * @param {Object} req - The request object
- * @param {Object} res - The response object
- * @param {Function} next - The next middleware
- */
 exports.createTemplate = async (req, res, next) => {
   try {
     const { name, description, template: templateYaml, parameters, isPublic } = req.body;
     
-    // Check if name already exists
     const existingTemplate = await Template.findOne({ name });
     
     if (existingTemplate) {
       return next(createError(409, 'Template with this name already exists'));
     }
     
-    // Create template in Argo
     try {
       console.log(`[Template] Creating new template "${name}" with YAML:`, templateYaml);
       
-      // Parse the template YAML properly using js-yaml
       let templateObj;
       
       try {
-        // Try parsing as YAML first
         console.log('[Template] Attempting to parse as YAML');
         templateObj = yaml.load(templateYaml);
-        console.log('[Template] Successfully parsed YAML:', JSON.stringify(templateObj, null, 2));
       } catch (yamlError) {
         console.log('[Template] YAML parsing failed:', yamlError.message);
         try {
-          // If YAML parsing fails, try evaluating as JavaScript object (for backward compatibility)
-          console.log('[Template] Attempting to parse as JavaScript object');
           templateObj = JSON.parse(JSON.stringify(eval(`(${templateYaml})`)));
-          console.log('[Template] Successfully parsed JS object:', JSON.stringify(templateObj, null, 2));
         } catch (jsError) {
-          console.error('[Template] Both YAML and JS parsing failed:', jsError.message);
           return next(createError(400, `Invalid template format: ${yamlError.message}`));
         }
       }
@@ -155,9 +125,6 @@ exports.createTemplate = async (req, res, next) => {
         templateObj.metadata.name = name;
       }
       
-      console.log('[Template] Final template object before submission:', JSON.stringify(templateObj, null, 2));
-      
-      console.log('[Template] Submitting to Argo service');
       await argoService.createWorkflowTemplate(templateObj);
       console.log('[Template] Successfully created template in Argo');
     } catch (error) {
@@ -165,7 +132,6 @@ exports.createTemplate = async (req, res, next) => {
       return next(createError(400, `Template error: ${error.message}`));
     }
     
-    // Create template in DB
     const template = new Template({
       name,
       description,
@@ -188,12 +154,6 @@ exports.createTemplate = async (req, res, next) => {
   }
 };
 
-/**
- * Update a template
- * @param {Object} req - The request object
- * @param {Object} res - The response object
- * @param {Function} next - The next middleware
- */
 exports.updateTemplate = async (req, res, next) => {
   try {
     const { description, template: templateYaml, parameters, isPublic } = req.body;
@@ -250,13 +210,11 @@ exports.updateTemplate = async (req, res, next) => {
             spec: templateObj.spec
           };
           
-          // Remove generateName if it exists
           if (templateObj.metadata?.generateName) {
             console.log(`[Template] Removing generateName: ${templateObj.metadata.generateName}`);
             delete workflowTemplate.metadata.generateName;
           }
           
-          // Use the WorkflowTemplate instead
           templateObj = workflowTemplate;
           console.log('[Template] Converted to WorkflowTemplate:', JSON.stringify(templateObj, null, 2));
         } else if (!templateObj.kind || templateObj.kind !== 'WorkflowTemplate') {
@@ -269,7 +227,6 @@ exports.updateTemplate = async (req, res, next) => {
           templateObj.metadata.name = template.name;
         }
         
-        // Ensure the template has the correct name
         if (!templateObj.metadata.name || templateObj.metadata.name !== template.name) {
           console.log(`[Template] Setting metadata.name to "${template.name}"`);
           templateObj.metadata.name = template.name;
@@ -281,7 +238,6 @@ exports.updateTemplate = async (req, res, next) => {
         await argoService.updateWorkflowTemplate(template.name, templateObj);
         console.log('[Template] Successfully updated template in Argo');
         
-        // Update the template YAML
         template.template = templateYaml;
       } catch (error) {
         console.error('[Template] Error updating template in Argo:', error.message);
@@ -289,7 +245,6 @@ exports.updateTemplate = async (req, res, next) => {
       }
     }
     
-    // Update fields
     if (description !== undefined) template.description = description;
     if (parameters !== undefined) template.parameters = parameters;
     if (isPublic !== undefined) template.isPublic = isPublic;
@@ -312,12 +267,6 @@ exports.updateTemplate = async (req, res, next) => {
   }
 };
 
-/**
- * Delete a template
- * @param {Object} req - The request object
- * @param {Object} res - The response object
- * @param {Function} next - The next middleware
- */
 exports.deleteTemplate = async (req, res, next) => {
   try {
     const template = await Template.findOne({
@@ -329,7 +278,6 @@ exports.deleteTemplate = async (req, res, next) => {
       return next(createError(404, 'Template not found or you do not have permission to delete it'));
     }
     
-    // Delete from Argo
     try {
       console.log(`[Template] Deleting template "${template.name}" from Argo`);
       await argoService.deleteWorkflowTemplate(template.name);
@@ -338,7 +286,6 @@ exports.deleteTemplate = async (req, res, next) => {
       console.error(`[Template] Error deleting template from Argo: ${error.message}`);
     }
     
-    // Delete from DB
     await template.deleteOne();
     console.log(`[Template] Deleted template "${template.name}" from database`);
     

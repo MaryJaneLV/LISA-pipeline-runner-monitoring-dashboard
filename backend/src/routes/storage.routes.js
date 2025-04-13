@@ -91,10 +91,10 @@ router.get('/objects', requireAuth, storageController.listObjects);
  * @swagger
  * /storage/download:
  *   get:
- *      summary: Download a file directly
- *      description: >
- *        Downloads a file from the object storage if the user is authorized to access it.
- *        Authorization is based on token validation or file path rules (public, workflow, or user-owned files).
+ *     summary: Download a file directly
+ *     description: >
+ *       Downloads a file from the object storage if the user is authorized to access it.
+ *       Authorization is based on token validation or file path rules (public, workflow, or user-owned files).
  *     tags: [Storage]
  *     parameters:
  *       - in: query

@@ -4,27 +4,18 @@ const argoService = require('../services/argo.service');
 const kafkaService = require('../services/kafka.service');
 const createError = require('http-errors');
 
-/**
- * List workflows with optional filters
- * @param {Object} req - The request object
- * @param {Object} res - The response object
- * @param {Function} next - The next middleware
- */
 exports.listWorkflows = async (req, res, next) => {
   try {
     const { status, limit = 10, page = 1 } = req.query;
     const skip = (parseInt(page) - 1) * parseInt(limit);
     
-    // Build query
     const query = { createdBy: req.user._id };
     if (status) {
       query.status = status;
     }
     
-    // Get total count for pagination
     const total = await Workflow.countDocuments(query);
     
-    // Get workflows
     const workflows = await Workflow.find(query)
       .sort({ createdAt: -1 })
       .skip(skip)
@@ -45,12 +36,6 @@ exports.listWorkflows = async (req, res, next) => {
   }
 };
 
-/**
- * Get a workflow by ID
- * @param {Object} req - The request object
- * @param {Object} res - The response object
- * @param {Function} next - The next middleware
- */
 exports.getWorkflow = async (req, res, next) => {
   try {
     const workflow = await Workflow.findOne({
@@ -62,7 +47,6 @@ exports.getWorkflow = async (req, res, next) => {
       return next(createError(404, 'Workflow not found'));
     }
     
-    // Get Argo workflow details
     let argoWorkflow = null;
     try {
       argoWorkflow = await argoService.getWorkflow(workflow.argoWorkflowName);
@@ -79,27 +63,18 @@ exports.getWorkflow = async (req, res, next) => {
   }
 };
 
-/**
- * Create a new workflow
- * @param {Object} req - The request object
- * @param {Object} res - The response object
- * @param {Function} next - The next middleware
- */
 exports.createWorkflow = async (req, res, next) => {
   try {
     const { name, description, templateName, parameters } = req.body;
 
-    // Check if template exists
     const template = await Template.findOne({ name: templateName });
     
     if (!template) {
       return next(createError(404, 'Workflow template not found'));
     }
     
-    // Get user ID for artifact paths
     const userId = req.user._id.toString();
     
-    // Add user-specific artifact paths if not provided
     const workflowParams = { ...parameters } || {};
     
 
@@ -112,7 +87,6 @@ exports.createWorkflow = async (req, res, next) => {
       return next(createError(400, `Artifacts must be within your private or public folder: ${unauthorizedParams.join(', ')}`));
     }
     
-    // Convert parameters to the format expected by Argo
     const argoParameters = [];
     
     for (const [key, value] of Object.entries(workflowParams)) {
@@ -121,11 +95,6 @@ exports.createWorkflow = async (req, res, next) => {
         value: value.toString()
       });
     }
-    
-    // Create Argo workflow from template
-    console.log(`[Workflow] Creating workflow "${name}" from template "${templateName}"`);
-    console.log('[Workflow] Parameters:', workflowParams);
-    console.log('[Workflow] Argo parameters:', argoParameters);
     
     const argoWorkflow = {
       apiVersion: 'argoproj.io/v1alpha1',
@@ -143,18 +112,15 @@ exports.createWorkflow = async (req, res, next) => {
       }
     };
     
-    console.log('[Workflow] Submitting to Argo:', JSON.stringify(argoWorkflow, null, 2));
     
     // Submit to Argo
     const result = await argoService.submitWorkflow(argoWorkflow);
     
-    console.log('[Workflow] Argo submission result:', JSON.stringify(result, null, 2));
     
     if (!result || !result.metadata || !result.metadata.name) {
       return next(createError(500, 'Failed to create Argo workflow'));
     }
     
-    // Create workflow in DB
     const workflow = new Workflow({
       name,
       description,
@@ -167,7 +133,6 @@ exports.createWorkflow = async (req, res, next) => {
     
     await workflow.save();
     
-    // Publish workflow creation event
     await kafkaService.publishWorkflowSubmission({
       id: workflow._id.toString(),
       argoWorkflowName: workflow.argoWorkflowName,
@@ -183,12 +148,6 @@ exports.createWorkflow = async (req, res, next) => {
   }
 };
 
-/**
- * Terminate a workflow
- * @param {Object} req - The request object
- * @param {Object} res - The response object
- * @param {Function} next - The next middleware
- */
 exports.terminateWorkflow = async (req, res, next) => {
   try {
     const workflow = await Workflow.findOne({
@@ -200,15 +159,12 @@ exports.terminateWorkflow = async (req, res, next) => {
       return next(createError(404, 'Workflow not found'));
     }
     
-    // Only allow terminating pending or running workflows
     if (!['Pending', 'Running'].includes(workflow.status)) {
       return next(createError(400, 'Cannot terminate a completed workflow'));
     }
     
-    // Terminate in Argo
     await argoService.terminateWorkflow(workflow.argoWorkflowName);
     
-    // Update status
     workflow.status = 'Terminated';
     workflow.finishedAt = new Date();
     await workflow.save();
@@ -222,12 +178,6 @@ exports.terminateWorkflow = async (req, res, next) => {
   }
 };
 
-/**
- * Resubmit a workflow
- * @param {Object} req - The request object
- * @param {Object} res - The response object
- * @param {Function} next - The next middleware
- */
 exports.resubmitWorkflow = async (req, res, next) => {
   try {
     const originalWorkflow = await Workflow.findOne({
@@ -242,12 +192,9 @@ exports.resubmitWorkflow = async (req, res, next) => {
     // Create a new workflow with the same parameters
     const { name, description, templateName, parameters } = originalWorkflow;
     
-    // Convert parameters to the format expected by Argo
     const argoParameters = [];
     
     for (const [key, value] of Object.entries(parameters || {})) {
-      // Skip internal MongoDB fields and any invalid parameter names
-      // Argo requires parameter names to only contain alphanumeric characters, '_' or '-'
       if (!key.startsWith('$') && /^[a-zA-Z0-9_-]+$/.test(key)) {
         argoParameters.push({
           name: key,
@@ -257,11 +204,6 @@ exports.resubmitWorkflow = async (req, res, next) => {
         console.log(`[Workflow] Skipping invalid parameter name: ${key}`);
       }
     }
-    
-    // Create Argo workflow from template
-    console.log(`[Workflow] Resubmitting workflow "${name}" from template "${templateName}"`);
-    console.log('[Workflow] Parameters:', parameters);
-    console.log('[Workflow] Argo parameters:', argoParameters);
     
     const argoWorkflow = {
       apiVersion: 'argoproj.io/v1alpha1',
@@ -279,18 +221,12 @@ exports.resubmitWorkflow = async (req, res, next) => {
       }
     };
     
-    console.log('[Workflow] Submitting to Argo:', JSON.stringify(argoWorkflow, null, 2));
-    
-    // Submit to Argo
     const result = await argoService.submitWorkflow(argoWorkflow);
-    
-    console.log('[Workflow] Argo submission result:', JSON.stringify(result, null, 2));
     
     if (!result || !result.metadata || !result.metadata.name) {
       return next(createError(500, 'Failed to create Argo workflow'));
     }
     
-    // Create a new workflow in DB
     const workflow = new Workflow({
       name: `${name} (Resubmission)`,
       description,
@@ -303,7 +239,6 @@ exports.resubmitWorkflow = async (req, res, next) => {
     
     await workflow.save();
     
-    // Publish workflow creation event
     await kafkaService.publishWorkflowSubmission({
       id: workflow._id.toString(),
       argoWorkflowName: workflow.argoWorkflowName,
@@ -319,12 +254,6 @@ exports.resubmitWorkflow = async (req, res, next) => {
   }
 };
 
-/**
- * Delete a workflow
- * @param {Object} req - The request object
- * @param {Object} res - The response object
- * @param {Function} next - The next middleware
- */
 exports.deleteWorkflow = async (req, res, next) => {
   try {
     const workflow = await Workflow.findOne({
@@ -336,7 +265,6 @@ exports.deleteWorkflow = async (req, res, next) => {
       return next(createError(404, 'Workflow not found'));
     }
     
-    // Delete from Argo if not already completed
     if (!['Succeeded', 'Failed', 'Terminated'].includes(workflow.status)) {
       try {
         await argoService.terminateWorkflow(workflow.argoWorkflowName);
@@ -351,7 +279,6 @@ exports.deleteWorkflow = async (req, res, next) => {
       console.error(`Error deleting workflow from Argo: ${error.message}`);
     }
     
-    // Delete from DB
     await workflow.deleteOne();
     
     res.json({
@@ -362,12 +289,6 @@ exports.deleteWorkflow = async (req, res, next) => {
   }
 };
 
-/**
- * Get workflow logs
- * @param {Object} req - The request object
- * @param {Object} res - The response object
- * @param {Function} next - The next middleware
- */
 exports.getWorkflowLogs = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -381,7 +302,6 @@ exports.getWorkflowLogs = async (req, res, next) => {
       return next(createError(404, 'Workflow not found'));
     }
     
-    // Get logs from Argo
     const logs = await argoService.getWorkflowLogs(workflow.argoWorkflowName);
     
     res.json({
@@ -392,12 +312,6 @@ exports.getWorkflowLogs = async (req, res, next) => {
   }
 };
 
-/**
- * Suspend a workflow
- * @param {Object} req - The request object
- * @param {Object} res - The response object
- * @param {Function} next - The next middleware
- */
 exports.suspendWorkflow = async (req, res, next) => {
   try {
     const workflow = await Workflow.findOne({
@@ -409,15 +323,12 @@ exports.suspendWorkflow = async (req, res, next) => {
       return next(createError(404, 'Workflow not found'));
     }
     
-    // Only allow suspending running workflows
     if (workflow.status !== 'Running') {
       return next(createError(400, 'Only running workflows can be suspended'));
     }
     
-    // Suspend in Argo
     await argoService.suspendWorkflow(workflow.argoWorkflowName);
     
-    // Update status
     workflow.status = 'Suspended';
     await workflow.save();
     
@@ -430,12 +341,6 @@ exports.suspendWorkflow = async (req, res, next) => {
   }
 };
 
-/**
- * Resume a workflow
- * @param {Object} req - The request object
- * @param {Object} res - The response object
- * @param {Function} next - The next middleware
- */
 exports.resumeWorkflow = async (req, res, next) => {
   try {
     const workflow = await Workflow.findOne({
@@ -468,11 +373,6 @@ exports.resumeWorkflow = async (req, res, next) => {
   }
 };
 
-/**
- * Update workflow status from an Argo workflow event
- * @param {Object} argoWorkflow - The Argo workflow object from event
- * @returns {Promise<Object|null>} - Updated workflow or null if not found
- */
 exports.updateWorkflowStatus = async (argoWorkflow) => {
   try {
     if (!argoWorkflow || !argoWorkflow.metadata || !argoWorkflow.metadata.name) {
@@ -489,10 +389,8 @@ exports.updateWorkflowStatus = async (argoWorkflow) => {
       return null;
     }
 
-    // Extract status from Argo workflow
     let argoStatus = argoWorkflow.status?.phase;
 
-    // Override status if workflow is running and has suspend flag
     const isSuspended = argoStatus === 'Running' && argoWorkflow?.spec?.suspend;
     let newStatus = isSuspended ? 'Suspended' : argoStatus;
 
@@ -503,17 +401,14 @@ exports.updateWorkflowStatus = async (argoWorkflow) => {
       }
     }
 
-    // Track if any updates were made to require saving
     let requiresSave = false;
 
-    // Update status if changed
     if (workflow.status !== newStatus) {
       console.log(`[WorkflowController] Updating workflow ${workflow._id} status from ${workflow.status} to ${newStatus}`);
       
       workflow.status = newStatus;
       requiresSave = true;
       
-      // Update timestamps based on status
       if (['Running'].includes(newStatus) && !workflow.startedAt) {
         workflow.startedAt = new Date();
       }
@@ -523,9 +418,7 @@ exports.updateWorkflowStatus = async (argoWorkflow) => {
       }
     }
 
-    // Update artifacts if workflow is completed or running
     if (['Running', 'Succeeded', 'Failed'].includes(newStatus)) {
-      // Extract artifacts from Argo workflow
       const artifacts = extractArtifactsFromArgoWorkflow(argoWorkflow, workflow);
       
       if (artifacts && artifacts.length > 0) {
@@ -535,7 +428,6 @@ exports.updateWorkflowStatus = async (argoWorkflow) => {
       }
     }
     
-    // Save if any updates were made
     if (requiresSave) {
       await workflow.save();
       console.log(`[WorkflowController] Workflow ${workflow._id} updated successfully`);
@@ -549,13 +441,6 @@ exports.updateWorkflowStatus = async (argoWorkflow) => {
     return null;
   }
 };
-
-/**
- * Extract artifacts from Argo workflow and merge with existing artifacts
- * @param {Object} argoWorkflow - The Argo workflow object from event
- * @param {Object} workflow - The workflow from MongoDB
- * @returns {Array} - Merged array of artifact objects
- */
 
 const extractArtifactsFromArgoWorkflow = (argoWorkflow, workflow) => {
   try {
