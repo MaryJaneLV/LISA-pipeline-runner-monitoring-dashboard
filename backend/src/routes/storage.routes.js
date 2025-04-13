@@ -211,4 +211,39 @@ router.post('/upload', requireAuth, upload.single('file'), storageController.upl
  */
 router.delete('/objects', requireAuth, storageController.deleteObject);
 
+/**
+ * @swagger
+ * /storage/folders:
+ *   post:
+ *     summary: Create a folder
+ *     description: Creates a new folder in the specified bucket and path
+ *     tags: [Storage]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - bucket
+ *               - folderPath
+ *             properties:
+ *               bucket:
+ *                 type: string
+ *                 description: Bucket name
+ *               folderPath:
+ *                 type: string
+ *                 description: Path where the folder should be created
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       201:
+ *         description: Folder created successfully
+ *       400:
+ *         description: Missing required parameters
+ *       403:
+ *         description: Unauthorized folder location
+ */
+router.post('/folders', requireAuth, storageController.createFolder);
+
 module.exports = router;

@@ -236,7 +236,6 @@ exports.uploadFile = async (req, res, next) => {
       return next(createError(403, 'Files must be uploaded to a valid input, output, or scripts folder'));
     }
     
-    // Upload file
     const result = await minioService.uploadObject(
       bucket,
       objectName,
@@ -277,11 +276,60 @@ exports.deleteObject = async (req, res, next) => {
       return next(createError(403, 'You can only delete files in your own folders'));
     }
     
-    // Delete object
     await minioService.deleteObject(bucket, objectName);
     
     res.json({
       message: 'Object deleted successfully'
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Create a folder
+ * @param {Object} req - The request object
+ * @param {Object} res - The response object
+ * @param {Function} next - The next middleware
+ */
+exports.createFolder = async (req, res, next) => {
+  try {
+    const { bucket, folderPath } = req.body;
+    
+    if (!bucket || !folderPath) {
+      return next(createError(400, 'Bucket and folder path are required'));
+    }
+    
+    const userId = req.user._id.toString();
+    const userInputPrefix = `${userId}/input/`;
+    const userOutputPrefix = `${userId}/output/`;
+    const userScriptsPrefix = `${userId}/scripts/`;
+    const publicInputPrefix = 'public/input/';
+    const publicOutputPrefix = 'public/output/';
+    const publicScriptsPrefix = 'public/scripts/';
+    
+    const normalizedPath = folderPath.endsWith('/') ? folderPath : `${folderPath}/`;
+    
+    if (!normalizedPath.startsWith(userInputPrefix) && 
+        !normalizedPath.startsWith(userOutputPrefix) && 
+        !normalizedPath.startsWith(userScriptsPrefix) && 
+        !normalizedPath.startsWith(publicInputPrefix) && 
+        !normalizedPath.startsWith(publicOutputPrefix) &&
+        !normalizedPath.startsWith(publicScriptsPrefix)) {
+      return next(createError(403, 'Folders must be created in a valid input, output, or scripts folder'));
+    }
+    
+    if (normalizedPath.startsWith('public/') && 
+        req.user.role !== 'admin' && 
+        req.user.role !== 'editor') {
+      return next(createError(403, 'You do not have permission to create folders in the public area'));
+    }
+    
+    const result = await minioService.createFolder(bucket, normalizedPath);
+    
+    res.status(201).json({
+      message: 'Folder created successfully',
+      ...result
     });
   } catch (error) {
     next(error);

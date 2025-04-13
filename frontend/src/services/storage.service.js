@@ -63,6 +63,20 @@ const StorageService = {
       params: { bucket, objectName }
     });
     return response.data;
+  },
+
+  /**
+   * Create a folder
+   * @param {String} bucket - Bucket name
+   * @param {String} folderPath - Folder path
+   * @returns {Promise<Object>} - Folder creation result
+   */
+  createFolder: async (bucket, folderPath) => {
+    const response = await api.post('/api/storage/folders', {
+      bucket,
+      folderPath
+    });
+    return response.data;
   }
 };
 

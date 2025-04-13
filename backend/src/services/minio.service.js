@@ -152,6 +152,30 @@ class MinioService {
   }
 
   /**
+   * Create a folder in a bucket
+   * @param {String} bucketName - The bucket name
+   * @param {String} folderPath - The folder path (must end with '/')
+   * @returns {Promise<Object>} - The folder info
+   */
+  async createFolder(bucketName, folderPath) {
+    try {
+      // Ensure folder path ends with a slash
+      const normalizedPath = folderPath.endsWith('/') ? folderPath : `${folderPath}/`;
+      
+      // Create an empty object to represent the folder
+      await this.client.putObject(bucketName, normalizedPath, Buffer.from(''), 0);
+      
+      return {
+        bucket: bucketName,
+        key: normalizedPath,
+        url: this.getObjectUrl(bucketName, normalizedPath)
+      };
+    } catch (error) {
+      throw new Error(`Error creating folder: ${error.message}`);
+    }
+  }
+
+  /**
    * List objects in a bucket
    * @param {String} bucketName - The bucket name
    * @param {String} prefix - The prefix to filter by (optional)
@@ -166,14 +190,29 @@ class MinioService {
         const objects = [];
         
         objectStream.on('data', (obj) => {
-          objects.push({
-            name: obj.name,
-            prefix: obj.prefix,
-            size: obj.size,
-            etag: obj.etag,
-            lastModified: obj.lastModified,
-            url: this.getObjectUrl(bucketName, obj.name)
-          });
+          // Skip objects that exactly match the prefix as they are usually just "folder markers"
+          // But include them if they are the actual prefix itself (ending with '/')
+          if (obj.name !== prefix && obj.name.endsWith('/')) {
+            objects.push({
+              name: obj.name,
+              prefix: obj.prefix,
+              size: obj.size,
+              etag: obj.etag,
+              lastModified: obj.lastModified,
+              url: this.getObjectUrl(bucketName, obj.name),
+              isFolder: true
+            });
+          } else if (!obj.name.endsWith('/')) {
+            objects.push({
+              name: obj.name,
+              prefix: obj.prefix,
+              size: obj.size,
+              etag: obj.etag,
+              lastModified: obj.lastModified,
+              url: this.getObjectUrl(bucketName, obj.name),
+              isFolder: false
+            });
+          }
         });
         
         objectStream.on('error', reject);

@@ -60,6 +60,20 @@ function StorageBrowser() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPrefix]);
   
+  useEffect(() => {
+    const handleStorageRefresh = () => {
+      if (currentPrefix) {
+        fetchObjects();
+      }
+    };
+    
+    window.addEventListener('storage:refresh', handleStorageRefresh);
+    
+    return () => {
+      window.removeEventListener('storage:refresh', handleStorageRefresh);
+    };
+  }, [currentPrefix]); // eslint-disable-line react-hooks/exhaustive-deps
+  
   const fetchObjects = async () => {
     setLoading(true);
     try {
