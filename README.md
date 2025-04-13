@@ -95,13 +95,36 @@ npm start
 
 ## Workflow Examples
 
-The system comes with a sample workflow template for data processing. The workflow:
+The system comes with several sample workflow templates:
 
+### Data Processing Workflow
 1. Fetches data from a URL
 2. Validates the data
 3. Processes the data based on parameters
 4. Analyzes results
 5. Stores results in Minio
+
+### Script-Based Workflows
+The system supports script-based workflows where the processing code is supplied as an input parameter:
+
+1. **Script Inputs**: Users can upload Python, JavaScript, or shell scripts to be executed by workflows
+2. **Script Organization**: Scripts are stored in the `/workflow-scripts` directory, organized by workflow type
+3. **Docker Support**: Each script can have an accompanying Dockerfile for custom environment setup
+4. **Parameter Passing**: Scripts receive parameters via environment variables
+5. **Script Storage**: User scripts are stored in Minio and referenced by workflows
+
+#### Example: Number Processing Script Workflow
+This workflow accepts a Python script that processes numeric data:
+- Takes a script path as input parameter
+- Runs the script with specified operation and factor parameters
+- Script processes input numbers according to the operation
+- Results are stored as CSV files in Minio
+
+#### Example: Text Processing Script Workflow
+This workflow uses a Python script for text manipulation:
+- Script performs operations like uppercase, lowercase, or reverse
+- Text and operation are passed as parameters
+- Results are stored as text files in Minio
 
 ## Deployment Options
 

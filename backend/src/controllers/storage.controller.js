@@ -87,7 +87,7 @@ exports.getFile = async (req, res, next) => {
     
     // Validate access permissions with flexible rules
     const isWorkflowArtifact = objectName.includes('/output/') || 
-                              objectName.includes('/artifacts/') || 
+                              objectName.includes('/scripts/') || 
                               objectName.includes('/input/');  // All input files are treated as artifacts
     
     const isPublicFile = objectName.includes('public/');
@@ -221,15 +221,19 @@ exports.uploadFile = async (req, res, next) => {
     const userId = req.user._id.toString();
     const userInputPrefix = `${userId}/input/`;
     const userOutputPrefix = `${userId}/output/`;
+    const userScriptsPrefix = `${userId}/scripts/`;
     const publicInputPrefix = 'public/input/';
     const publicOutputPrefix = 'public/output/';
+    const publicScriptsPrefix = 'public/scripts/';
     
     // Ensure file is being uploaded to an allowed location
     if (!objectName.startsWith(userInputPrefix) && 
         !objectName.startsWith(userOutputPrefix) && 
+        !objectName.startsWith(userScriptsPrefix) && 
         !objectName.startsWith(publicInputPrefix) && 
-        !objectName.startsWith(publicOutputPrefix)) {
-      return next(createError(403, 'Files must be uploaded to a valid input or output folder'));
+        !objectName.startsWith(publicOutputPrefix) &&
+        !objectName.startsWith(publicScriptsPrefix)) {
+      return next(createError(403, 'Files must be uploaded to a valid input, output, or scripts folder'));
     }
     
     // Upload file

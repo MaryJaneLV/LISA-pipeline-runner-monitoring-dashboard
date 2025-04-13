@@ -19,6 +19,7 @@ import {
   Folder as FolderIcon,
   InsertDriveFile as FileIcon
 } from '@mui/icons-material';
+import { formatSize } from '../../utils/storageUtils';
 
 function StorageFileList({ 
   loading, 
@@ -26,7 +27,6 @@ function StorageFileList({
   onFolderClick, 
   onDownload, 
   onDelete,
-  formatSize,
   currentPrefix 
 }) {
   // Function to handle file download

@@ -43,9 +43,11 @@ class MinioService {
       `${userId}/`, 
       `${userId}/input/`, 
       `${userId}/output/`,
+      `${userId}/scripts/`,
       `public/`,
       `public/input/`,
-      `public/output/`
+      `public/output/`,
+      `public/scripts/`
     ];
     
     try {

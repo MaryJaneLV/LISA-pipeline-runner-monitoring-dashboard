@@ -11,6 +11,7 @@ import {
   Typography 
 } from '@mui/material';
 import { CloudUpload as UploadIcon } from '@mui/icons-material';
+import { formatSize } from '../../utils/storageUtils'
 
 function FileUploader({ 
   file, 
@@ -19,7 +20,6 @@ function FileUploader({
   onObjectNameChange, 
   onUpload, 
   uploading, 
-  formatSize,
   currentPrefix 
 }) {
   const [folderType, setFolderType] = useState('input');
@@ -27,9 +27,10 @@ function FileUploader({
   // Determine if we're already in an input or output folder
   const isInInputFolder = currentPrefix && currentPrefix.includes('/input/');
   const isInOutputFolder = currentPrefix && currentPrefix.includes('/output/');
+  const isInScriptsFolder = currentPrefix && currentPrefix.includes('/scripts/');
   
   // If already in a specific folder, disable the toggle
-  const isToggleDisabled = isInInputFolder || isInOutputFolder;
+  const isToggleDisabled = isInInputFolder || isInOutputFolder || isInScriptsFolder;
   
   const handleFolderTypeChange = (event, newFolderType) => {
     if (newFolderType !== null) {
@@ -75,6 +76,9 @@ function FileUploader({
             </ToggleButton>
             <ToggleButton value="output" aria-label="output folder">
               Output
+            </ToggleButton>
+            <ToggleButton value="scripts" aria-label="scripts folder">
+              Scripts
             </ToggleButton>
           </ToggleButtonGroup>
         </Box>

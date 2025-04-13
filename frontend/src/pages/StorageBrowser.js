@@ -16,7 +16,7 @@ import BucketSelector from '../components/storage/BucketSelector';
 import StorageFileList from '../components/storage/StorageFileList';
 import FileUploader from '../components/storage/FileUploader';
 import StorageInfo from '../components/storage/StorageInfo';
-import { formatSize, processObjects } from '../utils/storageUtils';
+import { processObjects } from '../utils/storageUtils';
 
 const DEFAULT_BUCKET = 'pipeline-runner-artifacts';
 
@@ -255,7 +255,6 @@ function StorageBrowser() {
                 onFolderClick={navigateToFolder}
                 onDownload={handleDownload}
                 onDelete={handleDelete}
-                formatSize={formatSize}
                 currentPrefix={currentPrefix}
               />
             </CardContent>
@@ -272,7 +271,6 @@ function StorageBrowser() {
                 onObjectNameChange={(e) => setObjectName(e.target.value)}
                 onUpload={handleUpload}
                 uploading={uploading}
-                formatSize={formatSize}
                 currentPrefix={currentPrefix}
               />
             </CardContent>

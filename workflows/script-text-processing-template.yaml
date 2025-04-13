@@ -1,0 +1,60 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: script-text-processing
+spec:
+  entrypoint: process-with-script
+  arguments:
+    parameters:
+      - name: inputText
+        value: "Hello, world!"
+        description: Text to process
+      - name: operation
+        value: uppercase
+        description: Operation to perform (uppercase, lowercase, reverse, wordcount)
+      - name: artifactInputPath
+        description: User-specific input path
+      - name: artifactOutputPath
+        description: User-specific output path
+      - name: scriptKey
+        description: S3 key for the script to use
+        value: "scripts/text-processing/process.py"
+
+  templates:
+    - name: process-with-script
+      inputs:
+        parameters:
+          - name: inputText
+          - name: operation
+          - name: artifactInputPath
+          - name: artifactOutputPath
+          - name: scriptKey
+        artifacts:
+          - name: script-file
+            path: /tmp/scripts/script.py
+            s3:
+              key: "{{inputs.parameters.scriptKey}}"
+              bucket: pipeline-runner-artifacts
+      container:
+        image: python:3.9-slim
+        command: ["/bin/bash", "-c"]
+        args:
+          - |
+            # Set environment variables for the script
+            export INPUT_TEXT="{{inputs.parameters.inputText}}"
+            export OPERATION="{{inputs.parameters.operation}}"
+            
+            # Install any required packages if present in a requirements file
+            if [ -f /tmp/scripts/requirements.txt ]; then
+              pip install -r /tmp/scripts/requirements.txt
+            fi
+            
+            # Run the script
+            python /tmp/scripts/script.py
+      outputs:
+        artifacts:
+          - name: output-results
+            path: /tmp/output/result.txt
+            s3:
+              key: "{{inputs.parameters.artifactOutputPath}}/result.txt"
+              bucket: pipeline-runner-artifacts

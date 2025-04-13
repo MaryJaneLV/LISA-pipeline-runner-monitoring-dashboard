@@ -21,6 +21,7 @@ import * as Yup from 'yup';
 import WorkflowService from '../services/workflow.service';
 import TemplateService from '../services/template.service';
 import { useNotification } from '../contexts/NotificationContext';
+import WorkflowParametersInput from '../components/workflow/WorkflowParametersInput';
 
 function WorkflowCreate() {
   const navigate = useNavigate();
@@ -194,23 +195,13 @@ function WorkflowCreate() {
                 <Divider sx={{ mb: 3 }} />
                 
                 {selectedTemplate.parameters && selectedTemplate.parameters.length > 0 ? (
-                  <Grid container spacing={3}>
-                    {selectedTemplate.parameters.map((param) => (
-                      <Grid item xs={12} md={6} key={param.name}>
-                        <TextField
-                          fullWidth
-                          id={`parameters-${param.name}`}
-                          name={`parameters.${param.name}`}
-                          label={param.name}
-                          value={formik.values.parameters[param.name] || ''}
-                          onChange={(e) => handleParameterChange(param.name, e.target.value)}
-                          required={param.required}
-                          helperText={param.description}
-                          type={param.type === 'number' ? 'number' : 'text'}
-                        />
-                      </Grid>
-                    ))}
-                  </Grid>
+                  <WorkflowParametersInput
+                    parameters={selectedTemplate.parameters.map(param => ({
+                      ...param,
+                      value: formik.values.parameters[param.name] || ''
+                    }))}
+                    onChange={handleParameterChange}
+                  />
                 ) : (
                   <Typography>
                     This template has no configurable parameters.
