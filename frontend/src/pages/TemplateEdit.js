@@ -98,11 +98,6 @@ function TemplateEdit() {
     }
   };
   
-  // For backward compatibility
-  const extractParametersFromYAML = (yamlContent) => {
-    return extractFromYAML(yamlContent).parameters;
-  }
-  
   const fetchTemplate = async () => {
     setLoading(true);
     try {

@@ -94,11 +94,6 @@ function TemplateCreate() {
     }
   };
   
-  // For backward compatibility
-  const extractParametersFromYAML = (yamlContent) => {
-    return extractFromYAML(yamlContent).parameters;
-  };
-  
   const validationSchema = Yup.object({
     description: Yup.string(),
     template: Yup.string().required('Template definition is required')

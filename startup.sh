@@ -68,10 +68,6 @@ echo "Installing Mongo Express..."
 chmod +x ./infrastructure/mongo-express/install.sh
 ./infrastructure/mongo-express/install.sh
 
-# Apply sample workflow template
-echo "Applying sample workflow template..."
-kubectl apply -f ./workflows/data-processing-workflow.yaml
-
 # Deploy backend
 echo "Deploying backend..."
 kubectl apply -f ./infrastructure/backend/deployment.yaml

@@ -318,13 +318,7 @@ exports.createFolder = async (req, res, next) => {
         !normalizedPath.startsWith(publicScriptsPrefix)) {
       return next(createError(403, 'Folders must be created in a valid input, output, or scripts folder'));
     }
-    
-    if (normalizedPath.startsWith('public/') && 
-        req.user.role !== 'admin' && 
-        req.user.role !== 'editor') {
-      return next(createError(403, 'You do not have permission to create folders in the public area'));
-    }
-    
+
     const result = await minioService.createFolder(bucket, normalizedPath);
     
     res.status(201).json({
