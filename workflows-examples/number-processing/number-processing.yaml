@@ -79,6 +79,8 @@ spec:
         artifacts:
           - name: output-results
             path: /tmp/output/results.csv
+            archive:
+              none: {}
             s3:
               key: "{{inputs.parameters.artifactOutputPath}}/results.csv"
               bucket: pipeline-runner-artifacts
