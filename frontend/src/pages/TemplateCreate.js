@@ -10,6 +10,7 @@ import {
   FormControl,
   FormControlLabel,
   Grid,
+  IconButton,
   InputLabel,
   MenuItem,
   Select,
@@ -390,83 +391,81 @@ function TemplateCreate() {
             </Box>
             <Divider sx={{ mb: 3 }} />
             
-            {formik.values.parameters.length > 0 ? (
-              formik.values.parameters.map((param, index) => (
-                <Box key={index} sx={{ mb: 4, p: 3, border: 1, borderColor: 'grey.300', borderRadius: 1 }}>
-                  <Grid container spacing={3}>
-                    <Grid item xs={12} md={6}>
+            <Grid container spacing={2}>
+              {formik.values.parameters.length > 0 ? (
+                formik.values.parameters.map((param, index) => (
+                  <Grid item xs={12} sm={6} key={index}>
+                    <Box sx={{ border: 1, borderColor: 'grey.300', borderRadius: 1, p: 2, height: '100%', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                        <TextField
+                          size="small"
+                          label="Name"
+                          value={param.name}
+                          onChange={(e) => handleParameterChange(index, 'name', e.target.value)}
+                          required
+                          sx={{ width: '65%' }}
+                        />
+                        <FormControl size="small" sx={{ width: '30%' }}>
+                          <InputLabel>Type</InputLabel>
+                          <Select
+                            value={param.type}
+                            onChange={(e) => handleParameterChange(index, 'type', e.target.value)}
+                            label="Type"
+                          >
+                            <MenuItem value="string">String</MenuItem>
+                            <MenuItem value="number">Number</MenuItem>
+                            <MenuItem value="boolean">Boolean</MenuItem>
+                            <MenuItem value="file">File</MenuItem>
+                            <MenuItem value="reference">Reference</MenuItem>
+                          </Select>
+                        </FormControl>
+                      </Box>
                       <TextField
                         fullWidth
-                        label="Parameter Name"
-                        value={param.name}
-                        onChange={(e) => handleParameterChange(index, 'name', e.target.value)}
-                        required
+                        size="small"
+                        label="Default"
+                        value={param.default}
+                        onChange={(e) => handleParameterChange(index, 'default', e.target.value)}
+                        sx={{ mb: 1 }}
                       />
-                    </Grid>
-                    <Grid item xs={12} md={6}>
-                      <FormControl fullWidth>
-                        <InputLabel>Type</InputLabel>
-                        <Select
-                          value={param.type}
-                          onChange={(e) => handleParameterChange(index, 'type', e.target.value)}
-                          label="Type"
-                        >
-                          <MenuItem value="string">String</MenuItem>
-                          <MenuItem value="number">Number</MenuItem>
-                          <MenuItem value="boolean">Boolean</MenuItem>
-                          <MenuItem value="file">File</MenuItem>
-                          <MenuItem value="reference">Reference</MenuItem>
-                        </Select>
-                      </FormControl>
-                    </Grid>
-                    <Grid item xs={12}>
                       <TextField
                         fullWidth
+                        size="small"
                         label="Description"
                         value={param.description}
                         onChange={(e) => handleParameterChange(index, 'description', e.target.value)}
-                        multiline
-                        rows={2}
+                        sx={{ mb: 1 }}
                       />
-                    </Grid>
-                    <Grid item xs={12} md={6}>
-                      <TextField
-                        fullWidth
-                        label="Default Value"
-                        value={param.default}
-                        onChange={(e) => handleParameterChange(index, 'default', e.target.value)}
-                      />
-                    </Grid>
-                    <Grid item xs={12} md={6}>
-                      <FormControlLabel
-                        control={
-                          <Switch
-                            checked={param.required}
-                            onChange={(e) => handleParameterChange(index, 'required', e.target.checked)}
-                          />
-                        }
-                        label="Required"
-                      />
-                    </Grid>
-                    <Grid item xs={12}>
-                      <Box display="flex" justifyContent="flex-end">
-                        <Button
-                          variant="outlined"
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <FormControlLabel
+                          control={
+                            <Switch
+                              size="small"
+                              checked={param.required}
+                              onChange={(e) => handleParameterChange(index, 'required', e.target.checked)}
+                            />
+                          }
+                          label="Required"
+                        />
+                        <IconButton
+                          size="small"
                           color="error"
                           onClick={() => handleRemoveParameter(index)}
                         >
-                          Remove
-                        </Button>
+                          <span role="img" aria-label="remove">❌</span>
+                        </IconButton>
                       </Box>
-                    </Grid>
+                    </Box>
                   </Grid>
-                </Box>
-              ))
-            ) : (
-              <Typography variant="body1" color="text.secondary" align="center" sx={{ py: 4 }}>
-                No parameters defined. Click "Add Parameter" to define input parameters for your template.
-              </Typography>
-            )}
+                ))
+              ) : (
+                <Grid item xs={12}>
+                  <Typography variant="body1" color="text.secondary" align="center" sx={{ py: 4 }}>
+                    No parameters defined. Click "Add Parameter" to define input parameters for your template.
+                  </Typography>
+                </Grid>
+              )}
+            </Grid>
           </CardContent>
         </Card>
         

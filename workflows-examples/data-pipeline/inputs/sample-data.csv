@@ -1,0 +1,11 @@
+timestamp,product_id,category,price,quantity,customer_region
+2025-04-01T08:30:15,P123,electronics,499.99,1,north
+2025-04-01T09:15:22,P456,clothing,39.99,2,south
+2025-04-01T10:05:33,P789,home,129.50,1,east
+2025-04-01T11:22:45,P234,electronics,899.99,1,west
+2025-04-01T12:17:50,P567,clothing,24.99,3,north
+2025-04-01T13:35:12,P890,home,79.99,2,south
+2025-04-01T14:42:18,P345,electronics,299.99,1,east
+2025-04-01T15:55:30,P678,clothing,59.99,2,west
+2025-04-01T16:23:45,P901,home,149.99,1,north
+2025-04-01T17:41:52,P432,electronics,1299.99,1,south
