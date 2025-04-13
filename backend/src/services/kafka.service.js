@@ -99,7 +99,7 @@ class KafkaService {
               { value: JSON.stringify(data) }
             ],
           });
-          console.log(`Published processed workflow status: ${JSON.stringify(data)}`);
+          console.log(`Published processed workflow status}`);
           callback(data);
         } catch (error) {
           console.error(`Error processing Kafka message: ${error}`);

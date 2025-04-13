@@ -1,6 +1,6 @@
-- Fix suspend/resume status updates
 - Check if we can delete templates/workflows from the DB using events (so that they are deleted from the db if they are deleted in argo)
 - Check about file/reference type autodetection
+- sunse workflow-trigger
 
   - Add unit tests
   - Add integration tests

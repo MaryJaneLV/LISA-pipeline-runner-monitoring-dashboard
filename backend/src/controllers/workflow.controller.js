@@ -481,9 +481,7 @@ exports.updateWorkflowStatus = async (argoWorkflow) => {
     }
 
     const argoWorkflowName = argoWorkflow.metadata.name;
-    console.log(`[WorkflowController] Updating status for workflow: ${argoWorkflowName}`);
-
-    // Find the workflow in the database
+ 
     const workflow = await Workflow.findOne({ argoWorkflowName });
     
     if (!workflow) {
@@ -492,29 +490,16 @@ exports.updateWorkflowStatus = async (argoWorkflow) => {
     }
 
     // Extract status from Argo workflow
-    const argoStatus = argoWorkflow.status?.phase;
-    let newStatus = workflow.status;
+    let argoStatus = argoWorkflow.status?.phase;
 
-    // Map Argo status to our status
-    if (argoStatus) {
-      switch (argoStatus) {
-        case 'Pending':
-          newStatus = 'Pending';
-          break;
-        case 'Running':
-          newStatus = 'Running';
-          break;
-        case 'Succeeded':
-          newStatus = 'Succeeded';
-          break;
-        case 'Failed':
-          newStatus = 'Failed';
-          break;
-        case 'Error':
-          newStatus = 'Failed';
-          break;
-        default:
-          console.log(`[WorkflowController] Unknown status: ${argoStatus}`);
+    // Override status if workflow is running and has suspend flag
+    const isSuspended = argoStatus === 'Running' && argoWorkflow?.spec?.suspend;
+    let newStatus = isSuspended ? 'Suspended' : argoStatus;
+
+    if (argoStatus && !['Suspended', 'Pending', 'Running', 'Succeeded', 'Failed'].includes(argoStatus)) {
+      newStatus = argoStatus === 'Error' ? 'Failed' : argoStatus;
+      if (argoStatus !== 'Error') {
+        console.log(`[WorkflowController] Unknown status: ${argoStatus}`);
       }
     }
 

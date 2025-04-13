@@ -16,7 +16,7 @@ const workflowSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['Pending', 'Running', 'Succeeded', 'Failed', 'Terminated'],
+    enum: ['Pending', 'Running', 'Succeeded', 'Failed', 'Terminated', 'Suspended'],
     default: 'Pending'
   },
   argoWorkflowName: {
