@@ -88,7 +88,7 @@ exports.getWorkflow = async (req, res, next) => {
 exports.createWorkflow = async (req, res, next) => {
   try {
     const { name, description, templateName, parameters } = req.body;
-    
+
     // Check if template exists
     const template = await Template.findOne({ name: templateName });
     
@@ -102,23 +102,14 @@ exports.createWorkflow = async (req, res, next) => {
     // Add user-specific artifact paths if not provided
     const workflowParams = { ...parameters } || {};
     
-    // Set user-specific input and output paths if not specified
-    if (!workflowParams.artifactInputPath) {
-      workflowParams.artifactInputPath = `${userId}/input`;
-    }
+
     if (!workflowParams.artifactOutputPath) {
-      workflowParams.artifactOutputPath = `${userId}/output`;
+      workflowParams.artifactOutputPath = 'public/output';
     }
-    
-    // Ensure paths are within allowed locations
-    if (!workflowParams.artifactInputPath.startsWith(`${userId}/input`) && 
-        !workflowParams.artifactInputPath.startsWith('public/input')) {
-      return next(createError(400, 'Input path must be within your input folder or public input folder'));
-    }
-    
-    if (!workflowParams.artifactOutputPath.startsWith(`${userId}/output`) && 
-        !workflowParams.artifactOutputPath.startsWith('public/output')) {
-      return next(createError(400, 'Output path must be within your output folder or public output folder'));
+    const unauthorizedParams = Object.keys(workflowParams).filter(key => workflowParams[key].includes('/') && (!workflowParams[key].startsWith(`${userId}`) && !workflowParams[key].startsWith('public')));
+
+    if(unauthorizedParams.length > 0) {
+      return next(createError(400, `Artifacts must be within your private or public folder: ${unauthorizedParams.join(', ')}`));
     }
     
     // Convert parameters to the format expected by Argo
