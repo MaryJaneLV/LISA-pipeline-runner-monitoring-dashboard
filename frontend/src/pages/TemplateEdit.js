@@ -55,7 +55,7 @@ function TemplateEdit() {
       }));
     } catch (error) {
       console.error('Error parsing YAML:', error);
-      showError('Failed to parse YAML template');
+      showError(error.message ? `YAML parsing error: ${error.message}` : error);
       return [];
     }
   };
@@ -67,7 +67,7 @@ function TemplateEdit() {
       setTemplate(result);
     } catch (error) {
       console.error('Failed to fetch template:', error);
-      showError('Failed to load template details');
+      showError(error);
     } finally {
       setLoading(false);
     }
@@ -127,7 +127,7 @@ function TemplateEdit() {
         navigate(`/templates/${id}`);
       } catch (error) {
         console.error('Failed to update template:', error);
-        showError('Failed to update template');
+        showError(error);
       } finally {
         setSubmitting(false);
       }

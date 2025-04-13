@@ -41,7 +41,7 @@ function Login() {
         showError(result.message);
       }
     } catch (error) {
-      showError('An error occurred during login');
+      showError(error);
       console.error('Login error:', error);
     } finally {
       setIsSubmitting(false);

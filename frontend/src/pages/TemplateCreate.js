@@ -51,7 +51,7 @@ function TemplateCreate() {
       }));
     } catch (error) {
       console.error('Error parsing YAML:', error);
-      showError('Failed to parse YAML template');
+      showError(error.message ? `YAML parsing error: ${error.message}` : error);
       return [];
     }
   };
@@ -106,7 +106,7 @@ function TemplateCreate() {
         navigate('/templates');
       } catch (error) {
         console.error('Failed to create template:', error);
-        showError('Failed to create template');
+        showError(error);
       } finally {
         setSubmitting(false);
       }

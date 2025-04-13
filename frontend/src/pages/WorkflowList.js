@@ -51,7 +51,7 @@ function WorkflowList() {
       setTotalCount(result.pagination.total);
     } catch (error) {
       console.error('Failed to fetch workflows:', error);
-      showError('Failed to load workflows');
+      showError(error);
     } finally {
       setLoading(false);
     }
@@ -133,7 +133,7 @@ function WorkflowList() {
         fetchWorkflows();
       } catch (error) {
         console.error('Failed to delete workflow:', error);
-        showError('Failed to delete workflow');
+        showError(error);
       }
     }
   };

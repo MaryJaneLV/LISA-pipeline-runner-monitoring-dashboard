@@ -63,7 +63,7 @@ function TemplateDetail() {
       setTemplate(result);
     } catch (error) {
       console.error('Failed to fetch template:', error);
-      showError('Failed to load template details');
+      showError(error);
     } finally {
       setLoading(false);
     }
@@ -86,7 +86,7 @@ function TemplateDetail() {
         navigate('/templates');
       } catch (error) {
         console.error('Failed to delete template:', error);
-        showError('Failed to delete template');
+        showError(error);
       }
     }
   };

@@ -84,7 +84,7 @@ function StorageBrowser() {
       setObjects(processedObjects);
     } catch (error) {
       console.error('Failed to fetch objects:', error);
-      showError('Failed to load objects from storage');
+      showError(error);
     } finally {
       setLoading(false);
     }
@@ -183,7 +183,7 @@ function StorageBrowser() {
       }
     } catch (error) {
       console.error('Failed to start download:', error);
-      showError('Download failed. Please check server logs.');
+      showError(error);
     }
   };
   
@@ -196,7 +196,7 @@ function StorageBrowser() {
         fetchObjects();
       } catch (error) {
         console.error('Failed to delete object:', error);
-        showError('Failed to delete object');
+        showError(error);
       }
     }
   };

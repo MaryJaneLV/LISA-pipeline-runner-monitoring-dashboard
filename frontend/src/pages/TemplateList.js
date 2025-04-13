@@ -49,7 +49,7 @@ function TemplateList() {
       setTotalCount(result.pagination.total);
     } catch (error) {
       console.error('Failed to fetch templates:', error);
-      showError('Failed to load templates');
+      showError(error);
     } finally {
       setLoading(false);
     }
@@ -85,7 +85,7 @@ function TemplateList() {
         fetchTemplates();
       } catch (error) {
         console.error('Failed to delete template:', error);
-        showError('Failed to delete template');
+        showError(error);
       }
     }
   };

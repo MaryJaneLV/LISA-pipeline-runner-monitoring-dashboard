@@ -43,7 +43,7 @@ function WorkflowDetail() {
       setArgoWorkflow(result.argoWorkflow);
     } catch (error) {
       console.error('Failed to fetch workflow:', error);
-      showError('Failed to load workflow details');
+      showError(error);
     } finally {
       setLoading(false);
     }
@@ -129,7 +129,7 @@ function WorkflowDetail() {
         fetchWorkflow();
       } catch (error) {
         console.error('Failed to terminate workflow:', error);
-        showError('Failed to terminate workflow');
+        showError(error);
       }
     }
   };
@@ -142,7 +142,7 @@ function WorkflowDetail() {
         fetchWorkflow();
       } catch (error) {
         console.error('Failed to resubmit workflow:', error);
-        showError('Failed to resubmit workflow');
+        showError(error);
       }
     }
   };
@@ -155,7 +155,7 @@ function WorkflowDetail() {
         navigate('/workflows');
       } catch (error) {
         console.error('Failed to delete workflow:', error);
-        showError('Failed to delete workflow');
+        showError(error);
       }
     }
   };
@@ -168,7 +168,7 @@ function WorkflowDetail() {
         fetchWorkflow();
       } catch (error) {
         console.error('Failed to suspend workflow:', error);
-        showError('Failed to suspend workflow');
+        showError(error);
       }
     }
   };
@@ -181,7 +181,7 @@ function WorkflowDetail() {
         fetchWorkflow();
       } catch (error) {
         console.error('Failed to resume workflow:', error);
-        showError('Failed to resume workflow');
+        showError(error);
       }
     }
   };

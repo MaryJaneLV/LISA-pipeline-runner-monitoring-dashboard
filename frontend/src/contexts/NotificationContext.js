@@ -26,12 +26,25 @@ export const NotificationProvider = ({ children }) => {
 
   /**
    * Show error notification
-   * @param {string} message - The message to display
+   * @param {string|Error} message - The message to display or error object
    */
   const showError = (message) => {
+    let displayMessage = message;
+    
+    // Handle error objects with formatted messages from the API interceptor
+    if (message && typeof message === 'object') {
+      if (message.formattedMessage) {
+        displayMessage = message.formattedMessage;
+      } else if (message.response?.data?.message) {
+        displayMessage = message.response.data.message;
+      } else if (message.message) {
+        displayMessage = message.message;
+      }
+    }
+    
     setNotification({
       open: true,
-      message,
+      message: displayMessage,
       severity: 'error',
     });
   };

@@ -39,7 +39,7 @@ function WorkflowCreate() {
       setTemplates(result.data);
     } catch (error) {
       console.error('Failed to fetch templates:', error);
-      showError('Failed to load workflow templates');
+      showError(error);
     } finally {
       setLoading(false);
     }
@@ -56,7 +56,7 @@ function WorkflowCreate() {
       setSelectedTemplate(result);
     } catch (error) {
       console.error('Failed to fetch template details:', error);
-      showError('Failed to load template details');
+      showError(error);
     }
   };
   
@@ -92,7 +92,7 @@ function WorkflowCreate() {
         navigate(`/workflows/${result.workflow._id}`);
       } catch (error) {
         console.error('Failed to create workflow:', error);
-        showError('Failed to create workflow');
+        showError(error);
       } finally {
         setSubmitting(false);
       }
