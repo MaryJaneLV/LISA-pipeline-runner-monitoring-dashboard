@@ -159,7 +159,7 @@ function WorkflowCreate() {
                     >
                       {templates.map((template) => (
                         <MenuItem key={template._id} value={template._id}>
-                          {template.name} - {template.category}
+                          {template.name}
                         </MenuItem>
                       ))}
                     </Select>

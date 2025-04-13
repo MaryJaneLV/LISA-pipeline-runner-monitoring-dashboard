@@ -106,8 +106,11 @@ function StorageBrowser() {
     
     // Determine if we need to add an input/ or output/ subfolder
     let targetPrefix = currentPrefix;
-    if (!targetPrefix.endsWith('input/') && !targetPrefix.endsWith('output/')) {
-      // Default to input/ if not already in a specific subfolder
+    // Only add input/ if we're at the root level, not in any of the standard folders or their subfolders
+    if (!targetPrefix.includes('/input/') && 
+        !targetPrefix.includes('/output/') && 
+        !targetPrefix.includes('/scripts/')) {
+      // Default to input/ if not in any standard subfolder or their children
       targetPrefix = `${targetPrefix}${targetPrefix.endsWith('/') ? '' : '/'}input/`;
     }
     

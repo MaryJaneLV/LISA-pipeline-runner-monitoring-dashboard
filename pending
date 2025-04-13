@@ -1,5 +1,4 @@
 - Fix suspend/resume status updates
-- Surface error messages
 - Rethink storage per user / path definitios
 - Check if we can make input/output selectable
 - Check if we can delete templates/workflows from the DB using events (so that they are deleted from the db if they are deleted in argo)

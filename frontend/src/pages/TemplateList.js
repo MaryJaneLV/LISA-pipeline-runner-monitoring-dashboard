@@ -128,7 +128,6 @@ function TemplateList() {
                 <TableHead>
                   <TableRow>
                     <TableCell>Name</TableCell>
-                    <TableCell>Category</TableCell>
                     <TableCell>Version</TableCell>
                     <TableCell>Visibility</TableCell>
                     <TableCell>Created At</TableCell>
@@ -140,7 +139,6 @@ function TemplateList() {
                     templates.map((template) => (
                       <TableRow key={template._id}>
                         <TableCell>{template.name}</TableCell>
-                        <TableCell>{template.category}</TableCell>
                         <TableCell>{template.version}</TableCell>
                         <TableCell>
                           <Chip

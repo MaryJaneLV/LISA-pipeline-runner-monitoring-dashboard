@@ -11,7 +11,7 @@ const yaml = require('js-yaml');
  */
 exports.listTemplates = async (req, res, next) => {
   try {
-    const { category, limit = 10, page = 1 } = req.query;
+    const { limit = 10, page = 1 } = req.query;
     const skip = (parseInt(page) - 1) * parseInt(limit);
     
     // Build query
@@ -21,10 +21,6 @@ exports.listTemplates = async (req, res, next) => {
         { createdBy: req.user._id }
       ]
     };
-    
-    if (category) {
-      query.category = category;
-    }
     
     // Get total count for pagination
     const total = await Template.countDocuments(query);
@@ -84,7 +80,7 @@ exports.getTemplate = async (req, res, next) => {
  */
 exports.createTemplate = async (req, res, next) => {
   try {
-    const { name, description, template: templateYaml, parameters, isPublic, category } = req.body;
+    const { name, description, template: templateYaml, parameters, isPublic } = req.body;
     
     // Check if name already exists
     const existingTemplate = await Template.findOne({ name });
@@ -176,7 +172,6 @@ exports.createTemplate = async (req, res, next) => {
       template: templateYaml,
       parameters: parameters || [],
       isPublic: isPublic !== undefined ? isPublic : true,
-      category: category || 'Other',
       createdBy: req.user._id
     });
     
@@ -201,7 +196,7 @@ exports.createTemplate = async (req, res, next) => {
  */
 exports.updateTemplate = async (req, res, next) => {
   try {
-    const { description, template: templateYaml, parameters, isPublic, category } = req.body;
+    const { description, template: templateYaml, parameters, isPublic } = req.body;
     
     // Find the template
     const template = await Template.findOne({
@@ -298,7 +293,6 @@ exports.updateTemplate = async (req, res, next) => {
     if (description !== undefined) template.description = description;
     if (parameters !== undefined) template.parameters = parameters;
     if (isPublic !== undefined) template.isPublic = isPublic;
-    if (category !== undefined) template.category = category;
     
     // Increment version
     const versionParts = template.version.split('.');

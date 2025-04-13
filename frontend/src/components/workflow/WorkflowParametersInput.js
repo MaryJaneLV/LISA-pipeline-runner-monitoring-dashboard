@@ -66,6 +66,7 @@ function WorkflowParametersInput({ parameters, onChange }) {
     if (currentPrefix && fileModalOpen) {
       fetchObjects();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPrefix, fileModalOpen]);
 
   const fetchObjects = async () => {
@@ -122,20 +123,39 @@ function WorkflowParametersInput({ parameters, onChange }) {
     }
   };
 
-  const selectFile = (obj) => {
-    if (obj.isFolder) return;
+  const selectItem = (obj) => {
+    // For reference type, ONLY allow selecting folders
+    if (selectedParam?.type === 'reference') {
+      // Only allow folder selection for reference type
+      if (obj.isFolder) {
+        let folderPath = obj.prefix;
+
+        // Remove trailing slash if present
+        if (folderPath.endsWith('/')) {
+          folderPath = folderPath.slice(0, -1);
+        }
+
+        console.log(folderPath); // "output"
+        handleParameterChange(selectedParam.name, folderPath);
+        setFileModalOpen(false);
+      }
+      // If it's a file, do nothing for reference type
+      return;
+    } 
     
-    // Get full path for the selected file
-    const fullPath = obj.name.startsWith(currentPrefix) ? 
-      obj.name : `${currentPrefix}${obj.name}`;
+    // For file type, only allow file selection (not folders)
+    if (selectedParam?.type === 'file') {
+      if (obj.isFolder) {
+        return; // Don't allow folder selection for file type
+      }
       
-    // Update parameter value with selected file path
-    if (selectedParam) {
+      const fullPath = obj.name.startsWith(currentPrefix) ? 
+        obj.name : `${currentPrefix}${obj.name}`;
+        
       handleParameterChange(selectedParam.name, fullPath);
+      
+      setFileModalOpen(false);
     }
-    
-    // Close the dialog
-    setFileModalOpen(false);
   };
 
   if (!parameters || parameters.length === 0) {
@@ -150,7 +170,7 @@ function WorkflowParametersInput({ parameters, onChange }) {
     <>
       <Grid container spacing={3}>
         {parameters.map((param) => {
-          if (param.type === 'file') {
+          if (param.type === 'file' || param.type === 'reference') {
             return (
               <Grid item xs={12} md={6} key={param.name}>
                 <Typography variant="subtitle2" gutterBottom>
@@ -163,7 +183,7 @@ function WorkflowParametersInput({ parameters, onChange }) {
                     size="small"
                     value={param.value || param.default || ''}
                     onChange={(e) => handleParameterChange(param.name, e.target.value)}
-                    placeholder={'Enter file path'}
+                    placeholder={param.type === 'file' ? 'Enter file path' : 'Enter folder path'}
                     sx={{ mr: 2 }}
                   />
                   
@@ -179,6 +199,11 @@ function WorkflowParametersInput({ parameters, onChange }) {
                 {param.description && (
                   <FormHelperText>
                     {param.description}
+                  </FormHelperText>
+                )}
+                {param.type === 'reference' && (
+                  <FormHelperText>
+                    Reference type: Select a folder path (files cannot be selected)
                   </FormHelperText>
                 )}
               </Grid>
@@ -239,7 +264,7 @@ function WorkflowParametersInput({ parameters, onChange }) {
       maxWidth="md"
       fullWidth
     >
-      <DialogTitle>Select File</DialogTitle>
+      <DialogTitle>{selectedParam?.type === 'reference' ? 'Select Folder' : 'Select File'}</DialogTitle>
       <DialogContent>
         <Box sx={{ my: 2 }}>
           <Tabs
@@ -285,21 +310,55 @@ function WorkflowParametersInput({ parameters, onChange }) {
                     <TableRow 
                       key={obj.name}
                       hover
-                      onClick={() => obj.isFolder ? navigateToFolder(obj.prefix) : selectFile(obj)}
-                      sx={{ cursor: 'pointer' }}
+                      onClick={() => {
+                        if (obj.isFolder) {
+                          navigateToFolder(obj.prefix);
+                        } else if (selectedParam?.type === 'file') {
+                          selectItem(obj);
+                        }
+                      }}
+                      sx={{ cursor: obj.isFolder || (selectedParam?.type === 'file' && !obj.isFolder) ? 'pointer' : 'default' }}
                     >
                       <TableCell>
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
                           {obj.isFolder ? (
-                            <FolderIcon color="primary" sx={{ mr: 1 }} />
+                            <FolderIcon 
+                              color={selectedParam?.type === 'reference' ? 'success' : 'primary'} 
+                              sx={{ mr: 1 }} 
+                            />
                           ) : (
-                            <FileIcon sx={{ mr: 1 }} />
+                            <FileIcon 
+                              sx={{ mr: 1 }} 
+                              color={selectedParam?.type === 'reference' ? 'disabled' : 'inherit'} 
+                            />
                           )}
                           {obj.name}
                         </Box>
                       </TableCell>
                       <TableCell align="right">
-                        {obj.isFolder ? 'Folder' : 'File'}
+                        {obj.isFolder ? (
+                          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
+                            {selectedParam?.type === 'reference' && (
+                              <Button 
+                                size="small" 
+                                variant="contained" 
+                                color="success" 
+                                sx={{ mr: 1 }}
+                                onClick={(e) => {
+                                  e.stopPropagation(); 
+                                  selectItem(obj);
+                                }}
+                              >
+                                Select Folder
+                              </Button>
+                            )}
+                            <span>Folder</span>
+                          </Box>
+                        ) : (
+                          selectedParam?.type === 'reference' ?
+                            <span style={{ color: 'grey' }}>File (Not selectable)</span> :
+                            'File'
+                        )}
                       </TableCell>
                     </TableRow>
                   ))
@@ -316,6 +375,11 @@ function WorkflowParametersInput({ parameters, onChange }) {
         </Box>
       </DialogContent>
       <DialogActions>
+        {selectedParam?.type === 'reference' && (
+          <Typography variant="caption" sx={{ mr: 2, color: 'text.secondary', fontWeight: 'bold' }}>
+            Note: Click on a folder to navigate into it. Use the "Select Folder" button to choose the current folder.
+          </Typography>
+        )}
         <Button onClick={handleClose}>Cancel</Button>
       </DialogActions>
     </Dialog>

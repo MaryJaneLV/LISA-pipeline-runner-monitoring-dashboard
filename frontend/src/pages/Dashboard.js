@@ -247,7 +247,7 @@ function Dashboard() {
                         >
                           <ListItemText
                             primary={template.name}
-                            secondary={`Category: ${template.category} | Version: ${template.version}`}
+                            secondary={`Version: ${template.version}`}
                           />
                         </ListItem>
                         {index < templates.length - 1 && <Divider />}

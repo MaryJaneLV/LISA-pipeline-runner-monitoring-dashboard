@@ -9,7 +9,6 @@ import {
   Divider,
   FormControl,
   FormControlLabel,
-  FormHelperText,
   Grid,
   InputLabel,
   MenuItem,
@@ -34,21 +33,53 @@ function TemplateCreate() {
   const extractParametersFromYAML = (yamlContent) => {
     try {
       const parsedYAML = yaml.load(yamlContent);
-      
-      // Check if this is a valid Argo Workflow YAML with parameters
       if (!parsedYAML || !parsedYAML.spec) return [];
-      
-      // Extract parameters from workflow arguments
+  
       const workflowParams = parsedYAML.spec.arguments?.parameters || [];
-      
-      // Map Argo parameters to our application format
-      return workflowParams.map(param => ({
-        name: param.name,
-        description: param.description || '',
-        type: 'string', // Default to string type
-        default: param.value || '',
-        required: !param.value // If no default value is provided, assume it's required
-      }));
+      const templates = parsedYAML.spec.templates || [];
+  
+      // Collect all S3-related parameter references
+      const inputFileParams = new Set();
+      const outputRefParams = new Set();
+  
+      for (const template of templates) {
+        // Input artifacts
+        template.inputs?.artifacts?.forEach(artifact => {
+          if (artifact.s3?.key) {
+            const matches = artifact.s3.key.match(/{{inputs\.parameters\.([^}]+)}}/g);
+            matches?.forEach(match => {
+              const paramName = match.match(/{{inputs\.parameters\.([^}]+)}}/)?.[1];
+              if (paramName) inputFileParams.add(paramName);
+            });
+          }
+        });
+  
+        // Output artifacts
+        template.outputs?.artifacts?.forEach(artifact => {
+          if (artifact.s3?.key) {
+            const matches = artifact.s3.key.match(/{{inputs\.parameters\.([^}]+)}}/g);
+            matches?.forEach(match => {
+              const paramName = match.match(/{{inputs\.parameters\.([^}]+)}}/)?.[1];
+              if (paramName) outputRefParams.add(paramName);
+            });
+          }
+        });
+      }
+  
+      return workflowParams.map(param => {
+        let type = 'string';
+        if (inputFileParams.has(param.name)) type = 'file';
+        else if (outputRefParams.has(param.name)) type = 'reference';
+  
+        return {
+          name: param.name,
+          description: param.description || '',
+          type,
+          default: param.value || '',
+          required: !param.value
+        };
+      });
+  
     } catch (error) {
       console.error('Error parsing YAML:', error);
       showError(error.message ? `YAML parsing error: ${error.message}` : error);
@@ -60,7 +91,6 @@ function TemplateCreate() {
     name: Yup.string().required('Name is required'),
     description: Yup.string(),
     template: Yup.string().required('Template definition is required'),
-    category: Yup.string().required('Category is required'),
     isPublic: Yup.boolean()
   });
   
@@ -70,7 +100,6 @@ function TemplateCreate() {
       description: '',
       template: '',
       parameters: [],
-      category: 'Other',
       isPublic: true
     },
     validationSchema,
@@ -162,28 +191,6 @@ function TemplateCreate() {
                   helperText={formik.touched.name && formik.errors.name}
                   required
                 />
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <FormControl fullWidth error={formik.touched.category && Boolean(formik.errors.category)}>
-                  <InputLabel id="category-select-label">Category</InputLabel>
-                  <Select
-                    labelId="category-select-label"
-                    id="category"
-                    name="category"
-                    value={formik.values.category}
-                    onChange={formik.handleChange}
-                    label="Category"
-                    required
-                  >
-                    <MenuItem value="Data Processing">Data Processing</MenuItem>
-                    <MenuItem value="Machine Learning">Machine Learning</MenuItem>
-                    <MenuItem value="Visualization">Visualization</MenuItem>
-                    <MenuItem value="Other">Other</MenuItem>
-                  </Select>
-                  {formik.touched.category && formik.errors.category && (
-                    <FormHelperText>{formik.errors.category}</FormHelperText>
-                  )}
-                </FormControl>
               </Grid>
               <Grid item xs={12}>
                 <TextField
@@ -362,6 +369,7 @@ function TemplateCreate() {
                           <MenuItem value="number">Number</MenuItem>
                           <MenuItem value="boolean">Boolean</MenuItem>
                           <MenuItem value="file">File</MenuItem>
+                          <MenuItem value="reference">Reference</MenuItem>
                         </Select>
                       </FormControl>
                     </Grid>

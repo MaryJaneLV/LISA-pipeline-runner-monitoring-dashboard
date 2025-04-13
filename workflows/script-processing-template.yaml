@@ -12,8 +12,9 @@ spec:
       - name: factor
         value: "2"
         description: Factor to multiply by (if using multiply operation)
-      - name: artifactInputPath
-        description: User-specific input path
+      - name: numbersInput
+        value: "input/numbers.csv"
+        description: numbers to be processed
       - name: artifactOutputPath
         description: User-specific output path
       - name: scriptKey
@@ -25,9 +26,6 @@ spec:
       - name: requirementsKey
         description: S3 key for requirements.txt (optional)
         value: "scripts/number-processing/requirements.txt"
-      - name: useCustomImage
-        description: Whether to build and use a custom image
-        value: "false"
 
   templates:
     - name: process-with-script
@@ -35,17 +33,16 @@ spec:
         parameters:
           - name: operation
           - name: factor
-          - name: artifactInputPath
+          - name: numbersInput
           - name: artifactOutputPath
           - name: scriptKey
           - name: dockerfileKey
           - name: requirementsKey
-          - name: useCustomImage
         artifacts:
           - name: input-numbers
             path: /tmp/input/numbers.csv
             s3:
-              key: "{{inputs.parameters.artifactInputPath}}/numbers.csv"
+              key: "{{inputs.parameters.numbersInput}}"
               bucket: pipeline-runner-artifacts
           - name: script-file
             path: /tmp/scripts/script.py
@@ -88,56 +85,6 @@ spec:
         artifacts:
           - name: output-results
             path: /tmp/output/results.csv
-            s3:
-              key: "{{inputs.parameters.artifactOutputPath}}/results.csv"
-              bucket: pipeline-runner-artifacts
-              
-    # Optional template for building and running with a custom image
-    - name: build-and-run-custom-image
-      inputs:
-        parameters:
-          - name: operation
-          - name: factor
-          - name: artifactInputPath
-          - name: artifactOutputPath
-          - name: scriptKey
-          - name: dockerfileKey
-        artifacts:
-          - name: input-numbers
-            path: /workdir/input/numbers.csv
-            s3:
-              key: "{{inputs.parameters.artifactInputPath}}/numbers.csv"
-              bucket: pipeline-runner-artifacts
-          - name: script-file
-            path: /workdir/scripts/script.py
-            s3:
-              key: "{{inputs.parameters.scriptKey}}"
-              bucket: pipeline-runner-artifacts
-          - name: dockerfile
-            path: /workdir/scripts/Dockerfile
-            s3:
-              key: "{{inputs.parameters.dockerfileKey}}"
-              bucket: pipeline-runner-artifacts
-      container:
-        image: docker:20.10.12-dind
-        command: ["/bin/sh", "-c"]
-        args:
-          - |
-            # Build the image
-            cd /workdir/scripts
-            docker build -t custom-script-image .
-            
-            # Run the container with environment variables
-            docker run \
-              -v /workdir/input:/tmp/input \
-              -v /workdir/output:/tmp/output \
-              -e OPERATION="{{inputs.parameters.operation}}" \
-              -e FACTOR="{{inputs.parameters.factor}}" \
-              custom-script-image
-      outputs:
-        artifacts:
-          - name: output-results
-            path: /workdir/output/results.csv
             s3:
               key: "{{inputs.parameters.artifactOutputPath}}/results.csv"
               bucket: pipeline-runner-artifacts

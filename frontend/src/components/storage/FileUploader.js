@@ -24,12 +24,10 @@ function FileUploader({
 }) {
   const [folderType, setFolderType] = useState('input');
   
-  // Determine if we're already in an input or output folder
   const isInInputFolder = currentPrefix && currentPrefix.includes('/input/');
   const isInOutputFolder = currentPrefix && currentPrefix.includes('/output/');
   const isInScriptsFolder = currentPrefix && currentPrefix.includes('/scripts/');
   
-  // If already in a specific folder, disable the toggle
   const isToggleDisabled = isInInputFolder || isInOutputFolder || isInScriptsFolder;
   
   const handleFolderTypeChange = (event, newFolderType) => {
@@ -41,9 +39,13 @@ function FileUploader({
   // Determine upload path display
   let displayPath = currentPrefix || '';
   if (!isToggleDisabled && currentPrefix) {
-    // If not already in input/output folder, show the path with the selected folder type
+    // If not already in input/output/scripts folder or their subfolders, 
+    // show the path with the selected folder type
     const pathBase = displayPath.endsWith('/') ? displayPath : `${displayPath}/`;
     displayPath = `${pathBase}${folderType}/`;
+  } else {
+    // Make sure the display path ends with a slash for visual consistency
+    displayPath = displayPath.endsWith('/') ? displayPath : `${displayPath}/`;
   }
   
   return (

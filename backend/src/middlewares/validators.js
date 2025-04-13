@@ -57,7 +57,7 @@ const createTemplateSchema = Joi.object({
     Joi.object({
       name: Joi.string().required(),
       description: Joi.string().allow('', null),
-      type: Joi.string().valid('string', 'number', 'boolean', 'file').default('string'),
+      type: Joi.string().valid('string', 'number', 'boolean', 'file', 'reference').default('string'),
       default: Joi.alternatives().try(Joi.string(), Joi.number(), Joi.boolean()),
       required: Joi.boolean().default(false)
     })
@@ -74,7 +74,7 @@ const updateTemplateSchema = Joi.object({
     Joi.object({
       name: Joi.string().required(),
       description: Joi.string().allow('', null),
-      type: Joi.string().valid('string', 'number', 'boolean', 'file').default('string'),
+      type: Joi.string().valid('string', 'number', 'boolean', 'file', 'reference').default('string'),
       default: Joi.alternatives().try(Joi.string(), Joi.number(), Joi.boolean()),
       required: Joi.boolean().default(false)
     })

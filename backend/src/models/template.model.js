@@ -10,7 +10,7 @@ const parameterSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['string', 'number', 'boolean', 'file'],
+    enum: ['string', 'number', 'boolean', 'file', 'reference'],
     default: 'string'
   },
   default: {
@@ -41,11 +41,6 @@ const templateSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
-  category: {
-    type: String,
-    enum: ['Data Processing', 'Machine Learning', 'Visualization', 'Other'],
-    default: 'Other'
-  },
   version: {
     type: String,
     default: '1.0.0'
@@ -61,7 +56,7 @@ const templateSchema = new mongoose.Schema({
 
 // Add index for faster queries
 templateSchema.index({ name: 1 }, { unique: true });
-templateSchema.index({ category: 1, isPublic: 1 });
+templateSchema.index({ isPublic: 1 });
 
 const Template = mongoose.model('Template', templateSchema);
 

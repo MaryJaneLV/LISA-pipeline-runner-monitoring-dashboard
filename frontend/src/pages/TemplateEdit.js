@@ -10,7 +10,6 @@ import {
   Divider,
   FormControl,
   FormControlLabel,
-  FormHelperText,
   Grid,
   InputLabel,
   MenuItem,
@@ -81,7 +80,6 @@ function TemplateEdit() {
   const validationSchema = Yup.object({
     description: Yup.string(),
     template: Yup.string().required('Template definition is required'),
-    category: Yup.string().required('Category is required'),
     isPublic: Yup.boolean()
   });
   
@@ -90,7 +88,6 @@ function TemplateEdit() {
       description: '',
       template: '',
       parameters: [],
-      category: 'Other',
       isPublic: true
     },
     validationSchema,
@@ -140,7 +137,6 @@ function TemplateEdit() {
         description: template.description || '',
         template: template.template || '',
         parameters: template.parameters || [],
-        category: template.category || 'Other',
         isPublic: template.isPublic !== undefined ? template.isPublic : true
       });
     }
@@ -204,28 +200,6 @@ function TemplateEdit() {
                   disabled
                   helperText="Template name cannot be changed"
                 />
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <FormControl fullWidth error={formik.touched.category && Boolean(formik.errors.category)}>
-                  <InputLabel id="category-select-label">Category</InputLabel>
-                  <Select
-                    labelId="category-select-label"
-                    id="category"
-                    name="category"
-                    value={formik.values.category}
-                    onChange={formik.handleChange}
-                    label="Category"
-                    required
-                  >
-                    <MenuItem value="Data Processing">Data Processing</MenuItem>
-                    <MenuItem value="Machine Learning">Machine Learning</MenuItem>
-                    <MenuItem value="Visualization">Visualization</MenuItem>
-                    <MenuItem value="Other">Other</MenuItem>
-                  </Select>
-                  {formik.touched.category && formik.errors.category && (
-                    <FormHelperText>{formik.errors.category}</FormHelperText>
-                  )}
-                </FormControl>
               </Grid>
               <Grid item xs={12}>
                 <TextField
@@ -414,6 +388,7 @@ function TemplateEdit() {
                           <MenuItem value="number">Number</MenuItem>
                           <MenuItem value="boolean">Boolean</MenuItem>
                           <MenuItem value="file">File</MenuItem>
+                          <MenuItem value="reference">Reference</MenuItem>
                         </Select>
                       </FormControl>
                     </Grid>

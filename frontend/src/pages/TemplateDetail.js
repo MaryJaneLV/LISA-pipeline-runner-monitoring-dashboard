@@ -170,12 +170,6 @@ function TemplateDetail() {
               <Box display="flex" flexWrap="wrap" gap={4}>
                 <Box>
                   <Typography variant="body2" color="text.secondary">
-                    Category:
-                  </Typography>
-                  <Typography variant="body1">{template.category}</Typography>
-                </Box>
-                <Box>
-                  <Typography variant="body2" color="text.secondary">
                     Version:
                   </Typography>
                   <Typography variant="body1">{template.version}</Typography>
