@@ -246,10 +246,16 @@ exports.resubmitWorkflow = async (req, res, next) => {
     const argoParameters = [];
     
     for (const [key, value] of Object.entries(parameters || {})) {
-      argoParameters.push({
-        name: key,
-        value: value.toString()
-      });
+      // Skip internal MongoDB fields and any invalid parameter names
+      // Argo requires parameter names to only contain alphanumeric characters, '_' or '-'
+      if (!key.startsWith('$') && /^[a-zA-Z0-9_-]+$/.test(key)) {
+        argoParameters.push({
+          name: key,
+          value: value.toString()
+        });
+      } else {
+        console.log(`[Workflow] Skipping invalid parameter name: ${key}`);
+      }
     }
     
     // Create Argo workflow from template
