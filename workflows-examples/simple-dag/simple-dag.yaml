@@ -1,0 +1,263 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: simple-dag
+spec:
+  entrypoint: data-processing-dag
+  arguments:
+    parameters:
+      - name: dataInput
+        value: "public/input/data.csv"
+        description: "Input data file path"
+      - name: artifactOutputPath
+        value: "public/output"
+        description: "Base output path for artifacts"
+      - name: transformOperation
+        value: "normalize"
+        description: "Transformation operation (normalize, standardize, log)"
+      # Generate step script paths
+      - name: generateScriptKey
+        description: "S3 key for the generate step script"
+        value: "public/scripts/simple-dag/generate/process.py"
+      - name: generateRequirementsKey
+        description: "S3 key for generate step requirements.txt"
+        value: "public/scripts/simple-dag/generate/requirements.txt"
+      - name: generateEntrypointKey
+        description: "S3 key for generate step entrypoint.sh"
+        value: "public/scripts/simple-dag/generate/entrypoint.sh"
+      # Transform step script paths
+      - name: transformScriptKey
+        description: "S3 key for the transform step script"
+        value: "public/scripts/simple-dag/transform/process.py"
+      - name: transformRequirementsKey
+        description: "S3 key for transform step requirements.txt"
+        value: "public/scripts/simple-dag/transform/requirements.txt"
+      - name: transformEntrypointKey
+        description: "S3 key for transform step entrypoint.sh"
+        value: "public/scripts/simple-dag/transform/entrypoint.sh"
+      # Analyze step script paths
+      - name: analyzeScriptKey
+        description: "S3 key for the analyze step script"
+        value: "public/scripts/simple-dag/analyze/process.py" 
+      - name: analyzeRequirementsKey
+        description: "S3 key for analyze step requirements.txt"
+        value: "public/scripts/simple-dag/analyze/requirements.txt"
+      - name: analyzeEntrypointKey
+        description: "S3 key for analyze step entrypoint.sh"
+        value: "public/scripts/simple-dag/analyze/entrypoint.sh"
+
+  templates:
+    # Main DAG template that orchestrates the workflow
+    - name: data-processing-dag
+      inputs:
+        parameters:
+          - name: dataInput
+          - name: artifactOutputPath
+          - name: transformOperation
+          - name: generateScriptKey
+          - name: generateRequirementsKey
+          - name: generateEntrypointKey
+          - name: transformScriptKey
+          - name: transformRequirementsKey
+          - name: transformEntrypointKey
+          - name: analyzeScriptKey
+          - name: analyzeRequirementsKey
+          - name: analyzeEntrypointKey
+      dag:
+        tasks:
+          # Step 1: Generate weighted values
+          - name: generate
+            template: generate-step
+            arguments:
+              parameters:
+                - name: dataInput
+                  value: "{{inputs.parameters.dataInput}}"
+                - name: artifactOutputPath
+                  value: "{{inputs.parameters.artifactOutputPath}}/generate"
+                - name: scriptKey
+                  value: "{{inputs.parameters.generateScriptKey}}"
+                - name: requirementsKey
+                  value: "{{inputs.parameters.generateRequirementsKey}}"
+                - name: entrypointKey
+                  value: "{{inputs.parameters.generateEntrypointKey}}"
+          
+          # Step 2: Transform the data
+          - name: transform
+            template: transform-step
+            depends: "generate"
+            arguments:
+              parameters:
+                - name: dataInput
+                  value: "{{inputs.parameters.artifactOutputPath}}/generate/weighted_data.csv"
+                - name: operation
+                  value: "{{inputs.parameters.transformOperation}}"
+                - name: artifactOutputPath
+                  value: "{{inputs.parameters.artifactOutputPath}}/transform"
+                - name: scriptKey
+                  value: "{{inputs.parameters.transformScriptKey}}"
+                - name: requirementsKey
+                  value: "{{inputs.parameters.transformRequirementsKey}}"
+                - name: entrypointKey
+                  value: "{{inputs.parameters.transformEntrypointKey}}"
+          
+          # Step 3: Analyze the results
+          - name: analyze
+            template: analyze-step
+            depends: "transform"
+            arguments:
+              parameters:
+                - name: dataInput
+                  value: "{{inputs.parameters.artifactOutputPath}}/transform/transformed_data.csv"
+                - name: artifactOutputPath
+                  value: "{{inputs.parameters.artifactOutputPath}}/analyze"
+                - name: scriptKey
+                  value: "{{inputs.parameters.analyzeScriptKey}}"
+                - name: requirementsKey
+                  value: "{{inputs.parameters.analyzeRequirementsKey}}"
+                - name: entrypointKey
+                  value: "{{inputs.parameters.analyzeEntrypointKey}}"
+
+    # Generate step template
+    - name: generate-step
+      inputs:
+        parameters:
+          - name: dataInput
+          - name: artifactOutputPath
+          - name: scriptKey
+          - name: requirementsKey
+          - name: entrypointKey
+        artifacts:
+          - name: input-data
+            path: /tmp/input/data.csv
+            s3:
+              key: "{{inputs.parameters.dataInput}}"
+              bucket: pipeline-runner-artifacts
+          - name: script-file
+            path: /tmp/scripts/script.py
+            s3:
+              key: "{{inputs.parameters.scriptKey}}"
+              bucket: pipeline-runner-artifacts
+          - name: requirements
+            path: /tmp/scripts/requirements.txt
+            s3:
+              key: "{{inputs.parameters.requirementsKey}}"
+              bucket: pipeline-runner-artifacts
+          - name: entrypoint
+            path: /tmp/scripts/entrypoint.sh
+            s3:
+              key: "{{inputs.parameters.entrypointKey}}"
+              bucket: pipeline-runner-artifacts
+      container:
+        image: python:3.9-slim
+        command: ["/bin/bash", "/tmp/scripts/entrypoint.sh"]
+      outputs:
+        artifacts:
+          - name: weighted-data
+            path: /tmp/output/weighted_data.csv
+            archive:
+              none: {}
+            s3:
+              key: "{{inputs.parameters.artifactOutputPath}}/weighted_data.csv"
+              bucket: pipeline-runner-artifacts
+
+    # Transform step template
+    - name: transform-step
+      inputs:
+        parameters:
+          - name: dataInput
+          - name: operation
+          - name: artifactOutputPath
+          - name: scriptKey
+          - name: requirementsKey
+          - name: entrypointKey
+        artifacts:
+          - name: input-data
+            path: /tmp/input/weighted_data.csv
+            s3:
+              key: "{{inputs.parameters.dataInput}}"
+              bucket: pipeline-runner-artifacts
+          - name: script-file
+            path: /tmp/scripts/script.py
+            s3:
+              key: "{{inputs.parameters.scriptKey}}"
+              bucket: pipeline-runner-artifacts
+          - name: requirements
+            path: /tmp/scripts/requirements.txt
+            s3:
+              key: "{{inputs.parameters.requirementsKey}}"
+              bucket: pipeline-runner-artifacts
+          - name: entrypoint
+            path: /tmp/scripts/entrypoint.sh
+            s3:
+              key: "{{inputs.parameters.entrypointKey}}"
+              bucket: pipeline-runner-artifacts
+      container:
+        image: python:3.9-slim
+        command: ["/bin/bash", "/tmp/scripts/entrypoint.sh"]
+        args: ["{{inputs.parameters.operation}}"]
+      outputs:
+        artifacts:
+          - name: transformed-data
+            path: /tmp/output/transformed_data.csv
+            archive:
+              none: {}
+            s3:
+              key: "{{inputs.parameters.artifactOutputPath}}/transformed_data.csv"
+              bucket: pipeline-runner-artifacts
+
+    # Analyze step template
+    - name: analyze-step
+      inputs:
+        parameters:
+          - name: dataInput
+          - name: artifactOutputPath
+          - name: scriptKey
+          - name: requirementsKey
+          - name: entrypointKey
+        artifacts:
+          - name: input-data
+            path: /tmp/input/transformed_data.csv
+            s3:
+              key: "{{inputs.parameters.dataInput}}"
+              bucket: pipeline-runner-artifacts
+          - name: script-file
+            path: /tmp/scripts/script.py
+            s3:
+              key: "{{inputs.parameters.scriptKey}}"
+              bucket: pipeline-runner-artifacts
+          - name: requirements
+            path: /tmp/scripts/requirements.txt
+            s3:
+              key: "{{inputs.parameters.requirementsKey}}"
+              bucket: pipeline-runner-artifacts
+          - name: entrypoint
+            path: /tmp/scripts/entrypoint.sh
+            s3:
+              key: "{{inputs.parameters.entrypointKey}}"
+              bucket: pipeline-runner-artifacts
+      container:
+        image: python:3.9-slim
+        command: ["/bin/bash", "/tmp/scripts/entrypoint.sh"]
+      outputs:
+        artifacts:
+          - name: stats
+            path: /tmp/output/category_stats.csv
+            archive:
+              none: {}
+            s3:
+              key: "{{inputs.parameters.artifactOutputPath}}/category_stats.csv"
+              bucket: pipeline-runner-artifacts
+          - name: report
+            path: /tmp/output/summary_report.txt
+            archive:
+              none: {}
+            s3:
+              key: "{{inputs.parameters.artifactOutputPath}}/summary_report.txt"
+              bucket: pipeline-runner-artifacts
+          - name: visualization
+            path: /tmp/output/analysis_plots.png
+            archive:
+              none: {}
+            s3:
+              key: "{{inputs.parameters.artifactOutputPath}}/analysis_plots.png"
+              bucket: pipeline-runner-artifacts
