@@ -18,7 +18,7 @@ export const SocketProvider = ({ children }) => {
     // Only connect if user is authenticated
     if (isAuthenticated && token) {
       // Get base URL from environment or default
-      const baseURL = process.env.REACT_APP_API_URL || 'http://localhost:3000';
+      const baseURL = process.env.REACT_APP_API_URL || 'http://localhost:30083';
       
       // Initialize socket with auth token
       socketInstance = io(baseURL, {

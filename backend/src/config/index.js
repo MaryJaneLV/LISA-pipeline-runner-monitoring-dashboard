@@ -21,7 +21,7 @@ module.exports = {
     useSSL: process.env.MINIO_USE_SSL === 'true',
     accessKey: process.env.MINIO_ACCESS_KEY || 'minioadmin',
     secretKey: process.env.MINIO_SECRET_KEY || 'minioadmin',
-    defaultBucket: process.env.MINIO_DEFAULT_BUCKET || 'workflow-outputs'
+    defaultBucket: process.env.MINIO_DEFAULT_BUCKET || 'pipeline-runner-artifacts'
   },
   
   kafka: {
