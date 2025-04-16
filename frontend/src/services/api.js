@@ -1,6 +1,5 @@
 import axios from 'axios';
 
-// Create an axios instance with default configuration
 const api = axios.create({
   baseURL: process.env.REACT_APP_API_URL || 'http://localhost:3000',
   headers: {
@@ -8,13 +7,10 @@ const api = axios.create({
   }
 });
 
-// Add request interceptor
 api.interceptors.request.use(
   (config) => {
-    // Get token from localStorage
     const token = localStorage.getItem('token');
     
-    // If token exists, add to headers
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`;
     }
@@ -26,20 +22,15 @@ api.interceptors.request.use(
   }
 );
 
-// Add response interceptor
 api.interceptors.response.use(
   (response) => {
     return response;
   },
   (error) => {
-    // Handle auth errors (401, 403)
     if (error.response && (error.response.status === 401 || error.response.status === 403)) {
-      // If not already on login page, redirect
       if (!window.location.pathname.includes('/login')) {
-        // Clear token
         localStorage.removeItem('token');
         
-        // Redirect to login
         window.location.href = '/login';
       }
     }
@@ -53,7 +44,7 @@ api.interceptors.response.use(
         error.formattedMessage += ' - ' + Object.values(error.response.data.errors).join(', ');
       }
       
-      if (process.env.NODE_ENV === 'development' || true) { // Always show details since users are trusted
+      if (process.env.NODE_ENV === 'development' || true) { 
         error.formattedMessage += error.response.data?.stack ? 
           `\n\nTechnical details: ${error.response.data.stack}` : '';
       }

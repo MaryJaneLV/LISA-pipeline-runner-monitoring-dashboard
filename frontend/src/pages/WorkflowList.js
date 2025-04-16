@@ -87,10 +87,8 @@ function WorkflowList() {
       });
     };
     
-    // Add event listener
     window.addEventListener('workflow:updated', handleWorkflowUpdate);
     
-    // Clean up
     return () => {
       window.removeEventListener('workflow:updated', handleWorkflowUpdate);
     };

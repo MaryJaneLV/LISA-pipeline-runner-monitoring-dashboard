@@ -14,10 +14,6 @@ class MinioService {
     this.defaultBucket = config.minio.defaultBucket;
   }
 
-  /**
-   * Initialize default buckets if they don't exist
-   * @returns {Promise<void>}
-   */
   async initBuckets() {
     const defaultBuckets = [
       'pipeline-runner-artifacts',
@@ -31,12 +27,6 @@ class MinioService {
     }
   }
   
-  /**
-   * Initialize user storage folders in the default bucket
-   * Creates the necessary folder structure for user storage
-   * @param {String} userId - The user ID
-   * @returns {Promise<void>}
-   */
   async initUserStorage(userId) {
     const bucket = 'pipeline-runner-artifacts';
     const userFolderPaths = [
@@ -70,11 +60,6 @@ class MinioService {
     }
   }
 
-  /**
-   * Check if a bucket exists
-   * @param {String} bucketName - The bucket name
-   * @returns {Promise<Boolean>} - Whether the bucket exists
-   */
   async bucketExists(bucketName) {
     try {
       return await this.client.bucketExists(bucketName);
@@ -83,12 +68,6 @@ class MinioService {
     }
   }
 
-  /**
-   * Create a new bucket
-   * @param {String} bucketName - The bucket name
-   * @param {String} region - The region (optional)
-   * @returns {Promise<void>}
-   */
   async createBucket(bucketName, region = 'us-east-1') {
     try {
       await this.client.makeBucket(bucketName, region);
@@ -97,15 +76,6 @@ class MinioService {
     }
   }
 
-  /**
-   * Upload a file to a bucket
-   * @param {String} bucketName - The bucket name
-   * @param {String} objectName - The object name
-   * @param {Buffer|Stream} data - The file data
-   * @param {Number} size - The file size
-   * @param {String} contentType - The content type
-   * @returns {Promise<Object>} - The object info
-   */
   async uploadObject(bucketName, objectName, data, size, contentType = 'application/octet-stream') {
     try {
       const etag = await this.client.putObject(bucketName, objectName, data, size, {
@@ -123,12 +93,6 @@ class MinioService {
     }
   }
 
-  /**
-   * Download an object from a bucket
-   * @param {String} bucketName - The bucket name
-   * @param {String} objectName - The object name
-   * @returns {Promise<Stream>} - The object data stream
-   */
   async getObject(bucketName, objectName) {
     try {
       return await this.client.getObject(bucketName, objectName);
@@ -137,12 +101,6 @@ class MinioService {
     }
   }
 
-  /**
-   * Delete an object from a bucket
-   * @param {String} bucketName - The bucket name
-   * @param {String} objectName - The object name
-   * @returns {Promise<void>}
-   */
   async deleteObject(bucketName, objectName) {
     try {
       await this.client.removeObject(bucketName, objectName);
@@ -151,12 +109,6 @@ class MinioService {
     }
   }
 
-  /**
-   * Create a folder in a bucket
-   * @param {String} bucketName - The bucket name
-   * @param {String} folderPath - The folder path (must end with '/')
-   * @returns {Promise<Object>} - The folder info
-   */
   async createFolder(bucketName, folderPath) {
     try {
       // Ensure folder path ends with a slash
@@ -175,13 +127,6 @@ class MinioService {
     }
   }
 
-  /**
-   * List objects in a bucket
-   * @param {String} bucketName - The bucket name
-   * @param {String} prefix - The prefix to filter by (optional)
-   * @param {Boolean} recursive - Whether to list recursively (optional)
-   * @returns {Promise<Array>} - The list of objects
-   */
   async listObjects(bucketName, prefix = '', recursive = true) {
     try {
       const objectStream = this.client.listObjects(bucketName, prefix, recursive);
@@ -223,12 +168,6 @@ class MinioService {
     }
   }
 
-  /**
-   * Get a direct URL for an object
-   * @param {String} bucketName - The bucket name
-   * @param {String} objectName - The object name
-   * @returns {String} - The object URL
-   */
   getObjectUrl(bucketName, objectName) {
     // Use public host and port if available
     const host = process.env.PUBLIC_MINIO_HOST || 'localhost';

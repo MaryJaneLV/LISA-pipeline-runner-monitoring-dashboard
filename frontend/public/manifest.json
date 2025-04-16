@@ -1,6 +1,6 @@
 {
-  "short_name": "Scientific Workflow",
-  "name": "Scientific Workflow Pipeline Runner",
+  "short_name": "Pipeline Runner",
+  "name": "Pipeline Runner",
   "icons": [
     {
       "src": "favicon.ico",

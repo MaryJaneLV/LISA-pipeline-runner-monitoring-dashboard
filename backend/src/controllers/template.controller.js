@@ -184,7 +184,6 @@ exports.updateTemplate = async (req, res, next) => {
         } catch (yamlError) {
           console.log('[Template] YAML parsing failed:', yamlError.message);
           try {
-            // If YAML parsing fails, try evaluating as JavaScript object (for backward compatibility)
             console.log('[Template] Attempting to parse as JavaScript object');
             templateObj = JSON.parse(JSON.stringify(eval(`(${templateYaml})`)));
             console.log('[Template] Successfully parsed JS object:', JSON.stringify(templateObj, null, 2));
@@ -196,15 +195,13 @@ exports.updateTemplate = async (req, res, next) => {
         
         console.log(`[Template] Original kind: ${templateObj.kind || 'not specified'}`);
         
-        // Convert a Workflow to a WorkflowTemplate if needed
         if (templateObj.kind === 'Workflow') {
           console.log('[Template] Converting Workflow to WorkflowTemplate');
-          // Create a WorkflowTemplate from the Workflow
           const workflowTemplate = {
             apiVersion: templateObj.apiVersion,
             kind: 'WorkflowTemplate',
             metadata: {
-              name: template.name, // Use the existing template name
+              name: template.name, 
               namespace: templateObj.metadata?.namespace || 'scientific-workflow'
             },
             spec: templateObj.spec

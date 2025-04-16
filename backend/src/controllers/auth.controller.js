@@ -73,14 +73,12 @@ exports.changePassword = async (req, res, next) => {
     const { currentPassword, newPassword } = req.body;
     const user = req.user;
     
-    // Check current password
     const isMatch = await user.isValidPassword(currentPassword);
     
     if (!isMatch) {
       return next(createError(401, 'Current password is incorrect'));
     }
     
-    // Update password
     user.password = newPassword;
     await user.save();
     

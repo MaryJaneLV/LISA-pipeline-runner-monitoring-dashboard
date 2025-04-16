@@ -12,7 +12,6 @@ export const SocketProvider = ({ children }) => {
   const [workflowUpdates, setWorkflowUpdates] = useState([]);
   const { isAuthenticated, token } = useAuth();
 
-  // Initialize socket connection when authenticated
   useEffect(() => {
     let socketInstance = null;
 
@@ -29,7 +28,6 @@ export const SocketProvider = ({ children }) => {
         transports: ['websocket']
       });
 
-      // Socket event handlers
       socketInstance.on('connect', () => {
         console.log('Socket connected');
         setConnected(true);
@@ -67,11 +65,9 @@ export const SocketProvider = ({ children }) => {
         setConnected(false);
       });
 
-      // Save socket instance
       setSocket(socketInstance);
     }
 
-    // Cleanup on unmount or if auth state changes
     return () => {
       if (socketInstance) {
         console.log('Disconnecting socket');

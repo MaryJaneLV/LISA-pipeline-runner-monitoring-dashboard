@@ -44,11 +44,9 @@ function Dashboard() {
     setLoading(true);
     
     try {
-      // Fetch workflows
       const workflowResponse = await WorkflowService.getWorkflows({ limit: 5 });
       setRecentWorkflows(workflowResponse.data);
       
-      // Calculate stats
       const stats = {
         pending: 0,
         running: 0,
@@ -66,7 +64,6 @@ function Dashboard() {
       
       setWorkflowStats(stats);
       
-      // Fetch templates
       const templateResponse = await TemplateService.getTemplates({ limit: 5 });
       setTemplates(templateResponse.data);
     } catch (error) {
@@ -151,7 +148,6 @@ function Dashboard() {
             </Card>
           </Grid>
           
-          {/* Recent Workflows */}
           <Grid item xs={12} md={6}>
             <Card>
               <CardContent>
@@ -192,7 +188,6 @@ function Dashboard() {
             </Card>
           </Grid>
           
-          {/* Recent Updates */}
           <Grid item xs={12} md={6}>
             <Card>
               <CardContent>
@@ -222,7 +217,6 @@ function Dashboard() {
             </Card>
           </Grid>       
 
-          {/* Available Templates */}
           <Grid item xs={12} md={6}>
             <Card>
               <CardContent>

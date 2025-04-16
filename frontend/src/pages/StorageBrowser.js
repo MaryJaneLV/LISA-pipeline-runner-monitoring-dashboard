@@ -31,14 +31,12 @@ function StorageBrowser() {
   const [uploading, setUploading] = useState(false);
   const [selectedTab, setSelectedTab] = useState(0);
   
-  // File upload state
   const [file, setFile] = useState(null);
   const [objectName, setObjectName] = useState('');
   
   const handleTabChange = useCallback((_, newValue) => {
     setSelectedTab(newValue);
     
-    // Set prefix based on selected tab
     if (newValue === 0 && userId) { // My Files tab
       setCurrentPrefix(`${userId}/`);
     } else if (newValue === 1) { // Public Files tab
@@ -47,7 +45,6 @@ function StorageBrowser() {
   }, [userId]);
 
   useEffect(() => {    
-    // Set initial prefix based on user ID
     if (userId && currentPrefix === '') {
       handleTabChange(null, selectedTab);
     }
@@ -79,7 +76,6 @@ function StorageBrowser() {
     try {
       const result = await StorageService.listObjects(DEFAULT_BUCKET, currentPrefix);
       
-      // Process objects to handle folders
       const processedObjects = processObjects(result.objects, currentPrefix);
       setObjects(processedObjects);
     } catch (error) {
@@ -122,7 +118,6 @@ function StorageBrowser() {
       showSuccess('File uploaded successfully');
       setFile(null);
       setObjectName('');
-      // Navigate to the folder where the file was uploaded
       setCurrentPrefix(targetPrefix);
       fetchObjects();
     } catch (error) {
@@ -137,7 +132,6 @@ function StorageBrowser() {
     try {
       showSuccess('Starting download...');
       
-      // Make sure the object name includes the correct user prefix if needed
       let fullObjectName = objectName;
       
       // If the path doesn't already include the user ID and isn't a public file,

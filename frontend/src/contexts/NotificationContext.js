@@ -9,13 +9,10 @@ export const NotificationProvider = ({ children }) => {
   const [notification, setNotification] = useState({
     open: false,
     message: '',
-    severity: 'info', // 'error', 'warning', 'info', 'success'
+    severity: 'info',
   });
 
-  /**
-   * Show success notification
-   * @param {string} message - The message to display
-   */
+
   const showSuccess = (message) => {
     setNotification({
       open: true,
@@ -24,10 +21,6 @@ export const NotificationProvider = ({ children }) => {
     });
   };
 
-  /**
-   * Show error notification
-   * @param {string|Error} message - The message to display or error object
-   */
   const showError = (message) => {
     let displayMessage = message;
     
@@ -49,10 +42,6 @@ export const NotificationProvider = ({ children }) => {
     });
   };
 
-  /**
-   * Show warning notification
-   * @param {string} message - The message to display
-   */
   const showWarning = (message) => {
     setNotification({
       open: true,
@@ -61,10 +50,6 @@ export const NotificationProvider = ({ children }) => {
     });
   };
 
-  /**
-   * Show info notification
-   * @param {string} message - The message to display
-   */
   const showInfo = (message) => {
     setNotification({
       open: true,
@@ -73,9 +58,6 @@ export const NotificationProvider = ({ children }) => {
     });
   };
 
-  /**
-   * Close the notification
-   */
   const closeNotification = () => {
     setNotification({
       ...notification,

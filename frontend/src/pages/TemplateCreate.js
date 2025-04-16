@@ -24,7 +24,6 @@ import yaml from 'js-yaml';
 import TemplateService from '../services/template.service';
 import { useNotification } from '../contexts/NotificationContext';
 
-// Replace input parameter placeholders inside artifacts
 function replaceParamsInArtifacts(obj, fromParam, toParam) {
   if (typeof obj !== 'object' || obj === null) return;
   if (Array.isArray(obj)) {

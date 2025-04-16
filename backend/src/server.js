@@ -10,24 +10,18 @@ const passport = require('passport');
 const mongoose = require('mongoose');
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpecs = require('./config/swagger');
-
-// Import services
 const kafkaService = require('./services/kafka.service');
 
-// Import routes
 const authRoutes = require('./routes/auth.routes');
 const workflowRoutes = require('./routes/workflow.routes');
 const templateRoutes = require('./routes/template.routes');
 const storageRoutes = require('./routes/storage.routes');
 
-// Import controllers
 const workflowController = require('./controllers/workflow.controller');
 
-// Import config
 const config = require('./config');
 const { setupPassport } = require('./config/passport');
 
-// Initialize logger
 const logger = winston.createLogger({
   level: 'info',
   format: winston.format.combine(
@@ -41,7 +35,6 @@ const logger = winston.createLogger({
   ]
 });
 
-// Initialize Express app
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
@@ -51,7 +44,6 @@ const io = socketIo(server, {
   }
 });
 
-// Initialize MongoDB connection
 mongoose.connect(config.mongodb.uri, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
@@ -69,7 +61,6 @@ mongoose.connect(config.mongodb.uri, {
     await kafkaService.connect();
     logger.info('Connected to Kafka');
     
-    // Subscribe to workflow status updates
     await kafkaService.subscribeToWorkflowStatus(async (data) => {
       try {
         // Update workflow status in database
@@ -107,18 +98,15 @@ app.use(cors({
   credentials: true
 }));
 
-// Disable helmet CSP in development
 app.use(helmet({
   contentSecurityPolicy: false,
   // Disable cross-origin restrictions for downloads
   crossOriginResourcePolicy: { policy: 'cross-origin' }
 }));
 app.use(morgan('combined'));
-// Middleware for parsing JSON and form data
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Add middleware to log request information for debugging
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
   if (req.method === 'POST') {

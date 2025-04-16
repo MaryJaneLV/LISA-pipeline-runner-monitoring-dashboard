@@ -11,12 +11,6 @@ class ArgoService {
     });
   }
 
-  /**
-   * Submit a new workflow
-   * @param {Object} workflow - The workflow manifest or template reference
-   * @param {String} namespace - The namespace to submit to (optional)
-   * @returns {Promise<Object>} - The created workflow
-   */
   async submitWorkflow(workflow, namespace = config.argo.namespace) {
     try {
       console.log('[ArgoService] Submitting workflow in namespace:', namespace);
@@ -65,12 +59,6 @@ class ArgoService {
     }
   }
 
-  /**
-   * Get a workflow by name
-   * @param {String} name - The workflow name
-   * @param {String} namespace - The namespace (optional)
-   * @returns {Promise<Object>} - The workflow
-   */
   async getWorkflow(name, namespace = config.argo.namespace) {
     try {
       const response = await this.client.get(`/api/v1/workflows/${namespace}/${name}`);
@@ -80,12 +68,6 @@ class ArgoService {
     }
   }
 
-  /**
-   * List workflows with optional filters
-   * @param {Object} params - The query parameters
-   * @param {String} namespace - The namespace (optional)
-   * @returns {Promise<Array>} - The list of workflows
-   */
   async listWorkflows(params = {}, namespace = config.argo.namespace) {
     try {
       const response = await this.client.get(`/api/v1/workflows/${namespace}`, { params });
@@ -95,12 +77,6 @@ class ArgoService {
     }
   }
 
-  /**
-   * Delete a workflow
-   * @param {String} name - The workflow name
-   * @param {String} namespace - The namespace (optional)
-   * @returns {Promise<Object>} - The result
-   */
   async deleteWorkflow(name, namespace = config.argo.namespace) {
     try {
       const response = await this.client.delete(`/api/v1/workflows/${namespace}/${name}`);
@@ -110,12 +86,6 @@ class ArgoService {
     }
   }
 
-  /**
-   * Terminate a running workflow
-   * @param {String} name - The workflow name
-   * @param {String} namespace - The namespace (optional)
-   * @returns {Promise<Object>} - The result
-   */
   async terminateWorkflow(name, namespace = config.argo.namespace) {
     try {
       const response = await this.client.put(`/api/v1/workflows/${namespace}/${name}/terminate`);
@@ -125,12 +95,6 @@ class ArgoService {
     }
   }
 
-  /**
-   * Suspend a running workflow
-   * @param {String} name - The workflow name
-   * @param {String} namespace - The namespace (optional)
-   * @returns {Promise<Object>} - The result
-   */
   async suspendWorkflow(name, namespace = config.argo.namespace) {
     try {
       const response = await this.client.put(`/api/v1/workflows/${namespace}/${name}/suspend`);
@@ -140,12 +104,6 @@ class ArgoService {
     }
   }
 
-  /**
-   * Resume a suspended workflow
-   * @param {String} name - The workflow name
-   * @param {String} namespace - The namespace (optional)
-   * @returns {Promise<Object>} - The result
-   */
   async resumeWorkflow(name, namespace = config.argo.namespace) {
     try {
       const response = await this.client.put(`/api/v1/workflows/${namespace}/${name}/resume`);
@@ -155,12 +113,6 @@ class ArgoService {
     }
   }
 
-  /**
-   * Resubmit a workflow
-   * @param {String} name - The workflow name
-   * @param {String} namespace - The namespace (optional)
-   * @returns {Promise<Object>} - The resubmitted workflow
-   */
   async resubmitWorkflow(name, namespace = config.argo.namespace) {
     try {
       const response = await this.client.put(`/api/v1/workflows/${namespace}/${name}/resubmit`);
@@ -170,12 +122,6 @@ class ArgoService {
     }
   }
 
-  /**
-   * Get workflow logs
-   * @param {String} name - The workflow name
-   * @param {String} namespace - The namespace (optional)
-   * @returns {Promise<Object>} - The logs
-   */
   async getWorkflowLogs(name, namespace = config.argo.namespace) {
     try {
       console.log('[ArgoService] Fetching logs for workflow:', `/api/v1/workflows/${namespace}/${name}/log`);
@@ -188,11 +134,6 @@ class ArgoService {
     }
   }
 
-  /**
-   * List workflow templates
-   * @param {String} namespace - The namespace (optional)
-   * @returns {Promise<Array>} - The list of workflow templates
-   */
   async listWorkflowTemplates(namespace = config.argo.namespace) {
     try {
       const response = await this.client.get(`/api/v1/workflow-templates/${namespace}`);
@@ -202,12 +143,6 @@ class ArgoService {
     }
   }
 
-  /**
-   * Get a workflow template by name
-   * @param {String} name - The template name
-   * @param {String} namespace - The namespace (optional)
-   * @returns {Promise<Object>} - The workflow template
-   */
   async getWorkflowTemplate(name, namespace = config.argo.namespace) {
     try {
       const response = await this.client.get(`/api/v1/workflow-templates/${namespace}/${name}`);
@@ -217,12 +152,6 @@ class ArgoService {
     }
   }
 
-  /**
-   * Create a workflow template
-   * @param {Object} template - The template manifest
-   * @param {String} namespace - The namespace (optional)
-   * @returns {Promise<Object>} - The created template
-   */
   async createWorkflowTemplate(template, namespace = config.argo.namespace) {
     try {
       console.log('[ArgoService] Creating workflow template in namespace:', namespace);
@@ -253,13 +182,6 @@ class ArgoService {
     }
   }
 
-  /**
-   * Update a workflow template
-   * @param {String} name - The template name
-   * @param {Object} template - The template manifest
-   * @param {String} namespace - The namespace (optional)
-   * @returns {Promise<Object>} - The updated template
-   */
   async updateWorkflowTemplate(name, template, namespace = config.argo.namespace) {
     try {
       console.log(`[ArgoService] Updating workflow template "${name}" in namespace:`, namespace);
@@ -308,12 +230,6 @@ class ArgoService {
     }
   }
 
-  /**
-   * Delete a workflow template
-   * @param {String} name - The template name
-   * @param {String} namespace - The namespace (optional)
-   * @returns {Promise<Object>} - The result
-   */
   async deleteWorkflowTemplate(name, namespace = config.argo.namespace) {
     try {
       const response = await this.client.delete(`/api/v1/workflow-templates/${namespace}/${name}`);
@@ -323,10 +239,6 @@ class ArgoService {
     }
   }
 
-  /**
-   * Handle axios errors
-   * @param {Error} error - The error to handle
-   */
   _handleError(error) {
     if (error.response) {
       const { status, data } = error.response;
