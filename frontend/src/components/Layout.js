@@ -106,9 +106,22 @@ function Layout() {
           >
             <MenuIcon />
           </IconButton>
-          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-            Pipeline Runner
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
+            <img
+              src="/icon.png"
+              alt="Logo"
+              style={{ 
+                height: 52, 
+                width: 52, 
+                marginRight: 12,
+                borderRadius: '50%',
+                objectFit: 'cover'
+              }}
+            />
+            <Typography variant="h6" noWrap component="div">
+              Pipeline Runner
+            </Typography>
+          </Box>
           
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
             {/* Socket connection status */}
