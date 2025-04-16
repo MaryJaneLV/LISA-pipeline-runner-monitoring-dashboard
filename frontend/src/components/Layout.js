@@ -28,6 +28,8 @@ import {
   Person as PersonIcon,
   Logout as LogoutIcon
 } from '@mui/icons-material';
+// Import the icon directly
+import appIcon from '../assets/icon.png';
 
 import { useAuth } from '../contexts/AuthContext';
 import { useSocket } from '../contexts/SocketContext';
@@ -107,7 +109,7 @@ function Layout() {
           </IconButton>
           <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
             <img
-              src="/icon.png"
+              src={appIcon}
               alt="Logo"
               style={{ 
                 height: 52, 

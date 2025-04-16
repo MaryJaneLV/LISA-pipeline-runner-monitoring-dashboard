@@ -31,5 +31,5 @@ echo "==================================================="
 kubectl describe pod $FRONTEND_POD -n scientific-workflow
 
 echo ""
-echo "Frontend URL: http://localhost:30080"
+echo "Frontend URL: http://localhost:30084"
 echo ""
