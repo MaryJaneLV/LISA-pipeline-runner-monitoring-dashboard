@@ -10,9 +10,6 @@ The Pipeline Runner is a complete solution for creating, managing, and monitorin
 - React frontend for user interaction
 - Kubernetes-based infrastructure with one-command deployment
 
-## Architecture
-
-![Architecture Diagram](docs/architecture.png)
 
 The system consists of the following components:
 
@@ -45,7 +42,7 @@ The system consists of the following components:
 
 1. Clone the repository:
    ```
-   After we set up a repository
+   git clone git@gitlab.up.pt:up201710494/pipeline-runner.git
    ```
 
 2. Start the system using the one-command startup script:
@@ -96,7 +93,7 @@ npm start
 The system supports script-based workflows where the processing code is supplied as an input parameter:
 
 1. **Script Inputs**: Users can upload Python, JavaScript, or shell scripts to be executed by workflows
-2. **Script Organization**: Scripts are stored in the `/workflow-scripts` directory
+2. **Script Organization**: Scripts are stored in the `/scripts` directory
 3. **Docker Support**: Each script can have an accompanying Dockerfile for custom environment setup
 4. **Parameter Passing**: Scripts receive parameters via environment variables
 5. **Script Storage**: User scripts are stored in Minio and referenced by workflows
