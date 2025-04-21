@@ -1,7 +1,7 @@
 spec:
   type: NodePort
   ports:
-  - name: web
-    port: 2746
-    targetPort: 2746
-    nodePort: 30080
+    - name: web
+      port: 2746
+      targetPort: 2746
+      nodePort: 30080

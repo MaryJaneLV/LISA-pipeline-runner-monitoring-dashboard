@@ -63,10 +63,15 @@ echo "Installing MongoDB..."
 chmod +x ./infrastructure/mongo/install.sh
 ./infrastructure/mongo/install.sh
 
-# Install Argo Events
+# Install Mongo Express
 echo "Installing Mongo Express..."
 chmod +x ./infrastructure/mongo-express/install.sh
 ./infrastructure/mongo-express/install.sh
+
+# Install Prometheus and Grafana
+echo "Installing Prometheus and Grafana..."
+chmod +x ./infrastructure/prometheus-grafana/install.sh
+./infrastructure/prometheus-grafana/install.sh
 
 # Deploy backend
 echo "Deploying backend..."
@@ -88,6 +93,8 @@ chmod +x ./infrastructure/argo-events/install.sh
 nohup kubectl -n scientific-workflow port-forward svc/argo-server 2746:2746 &
 nohup kubectl -n scientific-workflow port-forward svc/kafdrop 9032:9000 &
 nohup kubectl -n scientific-workflow port-forward svc/mongo-express 9087:8081 &
+nohup kubectl -n monitoring port-forward svc/prometheus-kube-prometheus-prometheus 30090:9090 &
+nohup kubectl -n monitoring port-forward svc/prometheus-grafana 30091:80 &
 echo
 echo "Token for accessing Kubernetes Dashboard:"
 kubectl -n kubernetes-dashboard create token admin-user
@@ -96,11 +103,12 @@ echo "Scientific Workflow Pipeline Runner is now running!"
 echo
 echo "Access the following services:"
 echo "Argo Workflows UI:       http://localhost:2746"
-echo "Kubernetes Dashboard:    https://localhost:30081 (Access with token printed above)"
 echo "Minio Console:           http://localhost:30082 (minioadmin/minioadmin)"
 echo "Mongo Express:           http://localhost:9087"
 echo "Kaftdrop                 http://localhost:9032"
 echo "Pipeline Runner API:     http://localhost:30083"
 echo "Pipeline Runner UI:      http://localhost:30084"
+echo "Prometheus UI:           http://localhost:30090"
+echo "Grafana UI:              http://localhost:30091 (admin/admin)"
 echo
 echo "To shut down the system, run: kind delete cluster --name scientific-workflow"
