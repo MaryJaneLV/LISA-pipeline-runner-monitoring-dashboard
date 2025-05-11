@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboards
+  namespace: scientific-workflow
+  labels:
+    grafana_dashboard: 'true'
+data:
+  argo-workflows.json: |-
+    $(cat infrastructure/grafana/dashboards/argo-workflows.json)
