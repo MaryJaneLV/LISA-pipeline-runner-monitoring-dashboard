@@ -6,5 +6,9 @@ metadata:
   labels:
     grafana_dashboard: 'true'
 data:
-  argo-workflows.json: |-
-    $(cat infrastructure/grafana/dashboards/argo-workflows.json)
+  main-dashboard.json: |-
+    $(cat infrastructure/grafana/dashboards/main-dashboard.json)
+  argo-dashboard.json: |-
+    $(cat infrastructure/grafana/dashboards/argo-dashboard.json)
+  k8s.json: |-
+    $(cat infrastructure/grafana/dashboards/k8s.json)

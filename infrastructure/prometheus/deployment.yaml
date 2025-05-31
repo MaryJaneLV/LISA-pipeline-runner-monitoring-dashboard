@@ -1,204 +1,234 @@
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: prometheus-config
-  namespace: scientific-workflow
-  labels:
-    app: prometheus
-data:
-  prometheus.yml: |
-    global:
-      scrape_interval: 15s
-      evaluation_interval: 15s
-      scrape_timeout: 10s
+# ---
+# apiVersion: v1
+# kind: ConfigMap
+# metadata:
+#   name: prometheus-config
+#   namespace: scientific-workflow
+#   labels:
+#     app: prometheus
+# data:
+#   prometheus.yml: |
+#     global:
+#       scrape_interval: 15s
+#       evaluation_interval: 15s
+#       scrape_timeout: 10s
 
-    scrape_configs:
-      # Scrape Prometheus itself
-      - job_name: 'prometheus'
-        static_configs:
-          - targets: ['localhost:9090']
+#     scrape_configs:
+#       # Scrape Prometheus itself
+#       - job_name: 'prometheus'
+#         static_configs:
+#           - targets: ['localhost:9090']
 
-      # Kubernetes API server
-      - job_name: 'kubernetes-apiservers'
-        kubernetes_sd_configs:
-          - role: endpoints
-        scheme: https
-        tls_config:
-          ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-          insecure_skip_verify: true
-        bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
-        relabel_configs:
-          - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_service_name, __meta_kubernetes_endpoint_port_name]
-            action: keep
-            regex: default;kubernetes;https
+#       # Kubernetes API server
+#       - job_name: 'kubernetes-apiservers'
+#         kubernetes_sd_configs:
+#           - role: endpoints
+#         scheme: https
+#         tls_config:
+#           ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+#           insecure_skip_verify: true
+#         bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+#         relabel_configs:
+#           - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_service_name, __meta_kubernetes_endpoint_port_name]
+#             action: keep
+#             regex: default;kubernetes;https
 
-      # Argo Workflow Controller metrics
-      - job_name: 'argo-workflow-controller'
-        kubernetes_sd_configs:
-          - role: service
-            namespaces:
-              names:
-                - scientific-workflow
-        relabel_configs:
-          - source_labels: [__meta_kubernetes_service_name]
-            action: keep
-            regex: workflow-controller-metrics
+#       # Argo Workflow Controller metrics
+#       - job_name: 'argo-workflow-controller'
+#         kubernetes_sd_configs:
+#           - role: service
+#             namespaces:
+#               names:
+#                 - scientific-workflow
+#         relabel_configs:
+#           - source_labels: [__meta_kubernetes_service_name]
+#             action: keep
+#             regex: workflow-controller-metrics
 
-      # Other Argo components metrics
-      - job_name: 'argo-components'
-        kubernetes_sd_configs:
-          - role: service
-            namespaces:
-              names:
-                - scientific-workflow
-        relabel_configs:
-          - source_labels: [__meta_kubernetes_service_label_app]
-            action: keep
-            regex: argo.*
-          - source_labels: [__meta_kubernetes_service_port_name]
-            action: keep
-            regex: metrics
+#       # Other Argo components metrics
+#       - job_name: 'argo-components'
+#         kubernetes_sd_configs:
+#           - role: service
+#             namespaces:
+#               names:
+#                 - scientific-workflow
+#         relabel_configs:
+#           - source_labels: [__meta_kubernetes_service_label_app]
+#             action: keep
+#             regex: argo.*
+#           - source_labels: [__meta_kubernetes_service_port_name]
+#             action: keep
+#             regex: metrics
 
-      # Node exporter metrics
-      - job_name: 'kubernetes-nodes'
-        scheme: https
-        tls_config:
-          ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-          insecure_skip_verify: true
-        bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
-        kubernetes_sd_configs:
-          - role: node
-        relabel_configs:
-          - action: labelmap
-            regex: __meta_kubernetes_node_label_(.+)
-          - target_label: __address__
-            replacement: kubernetes.default.svc:443
-          - source_labels: [__meta_kubernetes_node_name]
-            regex: (.+)
-            target_label: __metrics_path__
-            replacement: /api/v1/nodes/${1}/proxy/metrics
+#       # Node exporter metrics
+#       - job_name: 'kubernetes-nodes'
+#         scheme: https
+#         tls_config:
+#           ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+#           insecure_skip_verify: true
+#         bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+#         kubernetes_sd_configs:
+#           - role: node
+#         relabel_configs:
+#           - action: labelmap
+#             regex: __meta_kubernetes_node_label_(.+)
+#           - target_label: __address__
+#             replacement: kubernetes.default.svc:443
+#           - source_labels: [__meta_kubernetes_node_name]
+#             regex: (.+)
+#             target_label: __metrics_path__
+#             replacement: /api/v1/nodes/${1}/proxy/metrics
 
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: prometheus
-  namespace: scientific-workflow
-  labels:
-    app: prometheus
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: prometheus
-  template:
-    metadata:
-      labels:
-        app: prometheus
-    spec:
-      serviceAccountName: prometheus
-      containers:
-        - name: prometheus
-          image: prom/prometheus:v2.46.0
-          args:
-            - '--config.file=/etc/prometheus/prometheus.yml'
-            - '--storage.tsdb.path=/prometheus'
-            - '--web.console.libraries=/etc/prometheus/console_libraries'
-            - '--web.console.templates=/etc/prometheus/consoles'
-            - '--web.enable-lifecycle'
-          ports:
-            - containerPort: 9090
-              name: http
-          readinessProbe:
-            httpGet:
-              path: /-/ready
-              port: 9090
-            initialDelaySeconds: 30
-            timeoutSeconds: 30
-          livenessProbe:
-            httpGet:
-              path: /-/healthy
-              port: 9090
-            initialDelaySeconds: 30
-            timeoutSeconds: 30
-          resources:
-            limits:
-              cpu: 500m
-              memory: 512Mi
-            requests:
-              cpu: 200m
-              memory: 256Mi
-          volumeMounts:
-            - name: config-volume
-              mountPath: /etc/prometheus
-            - name: prometheus-storage
-              mountPath: /prometheus
-      volumes:
-        - name: config-volume
-          configMap:
-            name: prometheus-config
-        - name: prometheus-storage
-          emptyDir: {}
+# ---
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: prometheus
+#   namespace: scientific-workflow
+#   labels:
+#     app: prometheus
+# spec:
+#   replicas: 1
+#   selector:
+#     matchLabels:
+#       app: prometheus
+#   template:
+#     metadata:
+#       labels:
+#         app: prometheus
+#     spec:
+#       serviceAccountName: prometheus
+#       containers:
+#         - name: prometheus
+#           image: prom/prometheus:v2.46.0
+#           args:
+#             - '--config.file=/etc/prometheus/prometheus.yml'
+#             - '--storage.tsdb.path=/prometheus'
+#             - '--web.console.libraries=/etc/prometheus/console_libraries'
+#             - '--web.console.templates=/etc/prometheus/consoles'
+#             - '--web.enable-lifecycle'
+#           ports:
+#             - containerPort: 9090
+#               name: http
+#           readinessProbe:
+#             httpGet:
+#               path: /-/ready
+#               port: 9090
+#             initialDelaySeconds: 30
+#             timeoutSeconds: 30
+#           livenessProbe:
+#             httpGet:
+#               path: /-/healthy
+#               port: 9090
+#             initialDelaySeconds: 30
+#             timeoutSeconds: 30
+#           resources:
+#             limits:
+#               cpu: 500m
+#               memory: 512Mi
+#             requests:
+#               cpu: 200m
+#               memory: 256Mi
+#           volumeMounts:
+#             - name: config-volume
+#               mountPath: /etc/prometheus
+#             - name: prometheus-storage
+#               mountPath: /prometheus
+#       volumes:
+#         - name: config-volume
+#           configMap:
+#             name: prometheus-config
+#         - name: prometheus-storage
+#           emptyDir: {}
 
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: prometheus
-  namespace: scientific-workflow
-  labels:
-    app: prometheus
-  annotations:
-    prometheus.io/scrape: 'true'
-    prometheus.io/port: '9090'
-spec:
-  selector:
-    app: prometheus
-  ports:
-    - port: 9090
-      targetPort: 9090
-      name: http
-  type: ClusterIP
+# ---
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: prometheus
+#   namespace: scientific-workflow
+#   labels:
+#     app: prometheus
+#   annotations:
+#     prometheus.io/scrape: 'true'
+#     prometheus.io/port: '9090'
+# spec:
+#   selector:
+#     app: prometheus
+#   ports:
+#     - port: 9090
+#       targetPort: 9090
+#       name: http
+#   type: ClusterIP
 
----
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: prometheus
-  namespace: scientific-workflow
+# ---
+# apiVersion: v1
+# kind: ServiceAccount
+# metadata:
+#   name: prometheus
+#   namespace: scientific-workflow
 
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: prometheus
-rules:
-  - apiGroups: ['']
-    resources:
-      - nodes
-      - nodes/proxy
-      - services
-      - endpoints
-      - pods
-    verbs: ['get', 'list', 'watch']
-  - apiGroups: ['']
-    resources:
-      - configmaps
-    verbs: ['get']
-  - nonResourceURLs: ['/metrics']
-    verbs: ['get']
+# ---
+# apiVersion: rbac.authorization.k8s.io/v1
+# kind: ClusterRole
+# metadata:
+#   name: prometheus
+# rules:
+#   - apiGroups: ['']
+#     resources:
+#       - nodes
+#       - nodes/proxy
+#       - services
+#       - endpoints
+#       - pods
+#     verbs: ['get', 'list', 'watch']
+#   - apiGroups: ['']
+#     resources:
+#       - configmaps
+#     verbs: ['get']
+#   - nonResourceURLs: ['/metrics']
+#     verbs: ['get']
 
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: prometheus
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: prometheus
-subjects:
-  - kind: ServiceAccount
-    name: prometheus
-    namespace: scientific-workflow
+# ---
+# apiVersion: rbac.authorization.k8s.io/v1
+# kind: ClusterRoleBinding
+# metadata:
+#   name: prometheus
+# roleRef:
+#   apiGroup: rbac.authorization.k8s.io
+#   kind: ClusterRole
+#   name: prometheus
+# subjects:
+#   - kind: ServiceAccount
+#     name: prometheus
+#     namespace: scientific-workflow
+# ---
+# apiVersion: monitoring.coreos.com/v1
+# kind: ServiceMonitor
+# metadata:
+#   name: kubelet
+#   namespace: scientific-workflow
+# spec:
+#   endpoints:
+#     - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+#       honorLabels: true
+#       interval: 30s
+#       port: https-metrics
+#       scheme: https
+#       tlsConfig:
+#         insecureSkipVerify: true
+#     - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+#       honorLabels: true
+#       interval: 30s
+#       path: /metrics/cadvisor
+#       port: https-metrics
+#       scheme: https
+#       tlsConfig:
+#         insecureSkipVerify: true
+#   jobLabel: k8s-app
+#   namespaceSelector:
+#     matchNames:
+#       - kube-system
+#   selector:
+#     matchLabels:
+#       k8s-app: kubelet

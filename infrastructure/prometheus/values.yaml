@@ -1,0 +1,66 @@
+prometheusOperator:
+  enabled: true
+  createCustomResource: true
+  cleanupCustomResource: false
+
+defaultRules:
+  create: true
+
+kubelet:
+  enabled: true
+  serviceMonitor:
+    https: true
+    metricRelabelings:
+      - action: keep
+        regex: container_.* # keep container-level metrics
+        sourceLabels: [__name__]
+  relabelings:
+    - action: replace
+      sourceLabels: [__meta_kubernetes_node_name]
+      targetLabel: node
+  cAdvisor:
+    enabled: true
+    metricRelabelings: []
+    relabelings: []
+  kubeStateMetrics:
+    enabled: true
+
+nodeExporter:
+  enabled: true
+  args:
+    - --web.listen-address=0.0.0.0:9100
+  hostNetwork: true
+  volumes: []
+  volumeMounts: []
+  securityContext:
+    privileged: true
+  tolerations:
+    - operator: Exists
+
+prometheus:
+  prometheusSpec:
+    serviceMonitorSelectorNilUsesHelmValues: false
+    serviceMonitorNamespaceSelector:
+      matchExpressions:
+        - key: kubernetes.io/metadata.name
+          operator: In
+          values:
+            - kube-system
+            - scientific-workflow
+
+    additionalScrapeConfigs:
+      - job_name: 'argo-workflow-controller'
+        scrape_interval: 10s # <-- Add this line
+        scrape_timeout: 5s # <-- Optional, but recommended
+        kubernetes_sd_configs:
+          - role: service
+            namespaces:
+              names:
+                - scientific-workflow
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_service_name]
+            action: keep
+            regex: workflow-controller-metrics
+
+grafana:
+  enabled: false

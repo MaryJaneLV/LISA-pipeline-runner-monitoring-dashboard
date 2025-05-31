@@ -14,6 +14,13 @@ data:
           "url": "http://host.docker.internal:9090",
           "access": "proxy",
           "isDefault": true
+        },
+        {
+          "name": "Loki",
+          "type": "loki",
+          "url": "http://loki:3100",
+          "access": "proxy",
+          "isDefault": false
         }
       ]
     }

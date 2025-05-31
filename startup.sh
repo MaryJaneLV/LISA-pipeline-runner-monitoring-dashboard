@@ -25,6 +25,13 @@ chmod +x ./infrastructure/kind/setup.sh
 # Create the scientific-workflow namespace
 kubectl create namespace scientific-workflow 2>/dev/null || true
 
+# Label nodes with k8s-app=kubelet
+echo "🏷️ Labeling nodes..."
+for node in $(kubectl get nodes -o name); do
+  kubectl label $node k8s-app=kubelet --overwrite
+done
+
+
 # Build and load Docker images to Kind
 # echo "Building and loading Docker images..."
 # docker build -t scientific-workflow-backend:latest ./backend
@@ -44,9 +51,9 @@ chmod +x ./infrastructure/prometheus/install.sh
 ./infrastructure/prometheus/install.sh
 
 # Install Minio
-# echo "Installing Minio..."
-# chmod +x ./infrastructure/minio/install.sh
-# ./infrastructure/minio/install.sh
+echo "Installing Minio..."
+chmod +x ./infrastructure/minio/install.sh
+./infrastructure/minio/install.sh
 
 # Install Argo Workflows
 echo "Installing Argo Workflows..."
@@ -98,9 +105,9 @@ chmod +x ./infrastructure/argo-events/install.sh
 nohup kubectl -n scientific-workflow port-forward svc/argo-server 2746:2746 &
 # nohup kubectl -n scientific-workflow port-forward svc/kafdrop 9032:9000 &
 # nohup kubectl -n scientific-workflow port-forward svc/mongo-express 9087:8081 &
-nohup kubectl -n scientific-workflow port-forward svc/prometheus 9090:9090 &
+nohup kubectl -n scientific-workflow port-forward svc/prometheus-kube-prometheus-prometheus 9090:9090 &
 nohup kubectl -n scientific-workflow port-forward svc/workflow-controller-metrics 9091:9090 &
-nohup kubectl -n scientific-workflow port-forward svc/grafana 3000:3000 &
+nohup kubectl -n scientific-workflow port-forward svc/grafana 8080:3000 &
 echo
 echo "Token for accessing Kubernetes Dashboard:"
 kubectl -n kubernetes-dashboard create token admin-user

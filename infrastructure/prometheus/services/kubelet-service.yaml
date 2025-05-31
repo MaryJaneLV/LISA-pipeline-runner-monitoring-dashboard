@@ -1,0 +1,16 @@
+# service for kubelet
+apiVersion: v1
+kind: Service
+metadata:
+  name: kubelet
+  namespace: kube-system
+  labels:
+    k8s-app: kubelet
+spec:
+  ports:
+    - name: https-metrics
+      port: 10250
+      targetPort: 10250
+  selector:
+    # Ensure this label exists on the kubelet nodes or DaemonSet if you're using a proxy pod
+    k8s-app: kubelet
