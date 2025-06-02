@@ -21,6 +21,14 @@ data:
           "url": "http://loki:3100",
           "access": "proxy",
           "isDefault": false
+        },
+        {
+          "name": "Thanos",
+          "type": "prometheus",
+          "url": "http://thanos-query:9090",
+          "access": "proxy",
+          "isDefault": false,
+          "editable": true
         }
       ]
     }

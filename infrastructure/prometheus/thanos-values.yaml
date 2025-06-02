@@ -1,0 +1,38 @@
+objstoreConfig: |
+  type: S3
+  config:
+    bucket: prometheus-data
+    endpoint: minio.scientific-workflow.svc.cluster.local:9000
+    access_key: minioadmin
+    secret_key: minioadmin
+    insecure: true
+
+query:
+  enabled: true
+  replicaCount: 1
+  service:
+    type: ClusterIP
+  stores:
+    - 'dnssrv+_grpc._tcp.thanos-storegateway.scientific-workflow.svc.cluster.local'
+    - prometheus-kube-prometheus-prometheus.scientific-workflow.svc.cluster.local:10901
+storegateway:
+  enabled: true
+  replicaCount: 1
+  persistence:
+    enabled: true
+    size: 8Gi
+
+compactor:
+  enabled: true
+  retentionResolutionRaw: 30d
+  retentionResolution5m: 90d
+  retentionResolution1h: 180d
+  persistence:
+    enabled: true
+    size: 8Gi
+
+bucketweb:
+  enabled: false
+
+ruler:
+  enabled: false

@@ -39,6 +39,36 @@ nodeExporter:
 
 prometheus:
   prometheusSpec:
+    # TODO: fix this later
+    service:
+      ports:
+        - name: grpc
+          port: 10901
+          targetPort: 10901
+    scrapeProtocols:
+      - PrometheusText0.0.4
+    retention: 30m
+    disableCompaction: true
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          accessModes: ['ReadWriteOnce']
+          resources:
+            requests:
+              storage: 10Gi
+    thanos:
+      blockSize: 30m
+      image: quay.io/thanos/thanos:v0.38.0
+      logLevel: debug
+      objectStorageConfig:
+        existingSecret:
+          name: thanos-objstore-config
+          key: objstore.yml
+    thanosService:
+      enabled: true
+      clusterIP: ''
+    thanosServiceMonitor:
+      enabled: true
     serviceMonitorSelectorNilUsesHelmValues: false
     serviceMonitorNamespaceSelector:
       matchExpressions:
@@ -50,8 +80,8 @@ prometheus:
 
     additionalScrapeConfigs:
       - job_name: 'argo-workflow-controller'
-        scrape_interval: 10s # <-- Add this line
-        scrape_timeout: 5s # <-- Optional, but recommended
+        scrape_interval: 10s
+        scrape_timeout: 5s
         kubernetes_sd_configs:
           - role: service
             namespaces:
@@ -61,6 +91,5 @@ prometheus:
           - source_labels: [__meta_kubernetes_service_name]
             action: keep
             regex: workflow-controller-metrics
-
 grafana:
   enabled: false

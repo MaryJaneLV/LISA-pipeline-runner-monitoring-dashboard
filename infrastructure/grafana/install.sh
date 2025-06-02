@@ -8,6 +8,7 @@ kubectl create configmap grafana-dashboards \
   --from-file=main-dashboard.json=infrastructure/grafana/dashboards/main-dashboard.json \
   --from-file=argo-dashboard.json=infrastructure/grafana/dashboards/argo-dashboard.json \
   --from-file=k8s.json=infrastructure/grafana/dashboards/k8s.json \
+  --from-file=historic-dashboard.json=infrastructure/grafana/dashboards/historic-dashboard.json \
   -n scientific-workflow \
   --dry-run=client -o yaml | kubectl apply -f -
 
@@ -16,7 +17,7 @@ kubectl apply -f infrastructure/grafana/dashboard-provider.yaml
 kubectl apply -f infrastructure/grafana/deployment.yaml
 
 # install Grafana Loki for logs
-helm repo add grafana https://grafana.github.io/helm-charts
+# helm repo add grafana https://grafana.github.io/helm-charts
 helm repo update
 
 helm upgrade --install loki grafana/loki-stack \

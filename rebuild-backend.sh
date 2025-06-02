@@ -4,7 +4,7 @@
 set -e  # Exit on any error
 
 echo "Rebuilding backend..."
-cd /Users/masalgado/Desktop/my-own-experiment/backend
+cd ./backend
 docker build -t scientific-workflow-backend:latest .
 
 echo "Loading image into Kind cluster..."

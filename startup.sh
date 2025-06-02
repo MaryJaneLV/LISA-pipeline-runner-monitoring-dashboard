@@ -33,27 +33,27 @@ done
 
 
 # Build and load Docker images to Kind
-# echo "Building and loading Docker images..."
-# docker build -t scientific-workflow-backend:latest ./backend
-# docker build -t scientific-workflow-frontend:latest ./frontend
+echo "Building and loading Docker images..."
+docker build -t scientific-workflow-backend:latest ./backend
+docker build -t scientific-workflow-frontend:latest ./frontend
 
-# kind load docker-image scientific-workflow-backend:latest --name scientific-workflow
-# kind load docker-image scientific-workflow-frontend:latest --name scientific-workflow
+kind load docker-image scientific-workflow-backend:latest --name scientific-workflow
+kind load docker-image scientific-workflow-frontend:latest --name scientific-workflow
 
 # Install Kubernetes Dashboard
 echo "Installing Kubernetes Dashboard..."
 chmod +x ./infrastructure/dashboard/install.sh
 ./infrastructure/dashboard/install.sh
 
-# Install Prometheus
-echo "Installing Prometheus..."
-chmod +x ./infrastructure/prometheus/install.sh
-./infrastructure/prometheus/install.sh
-
 # Install Minio
 echo "Installing Minio..."
 chmod +x ./infrastructure/minio/install.sh
 ./infrastructure/minio/install.sh
+
+# Install Prometheus
+echo "Installing Prometheus..."
+chmod +x ./infrastructure/prometheus/install.sh
+./infrastructure/prometheus/install.sh
 
 # Install Argo Workflows
 echo "Installing Argo Workflows..."
@@ -61,24 +61,24 @@ chmod +x ./infrastructure/argo/install.sh
 ./infrastructure/argo/install.sh
 
 # Install Kafka
-# echo "Installing Kafka..."
-# chmod +x ./infrastructure/kafka/install.sh
-# ./infrastructure/kafka/install.sh
+echo "Installing Kafka..."
+chmod +x ./infrastructure/kafka/install.sh
+./infrastructure/kafka/install.sh
 
 # Install Kafdrop
-# echo "Installing Kafdrop..."
-# chmod +x ./infrastructure/kafdrop/install.sh
-# ./infrastructure/kafdrop/install.sh
+echo "Installing Kafdrop..."
+chmod +x ./infrastructure/kafdrop/install.sh
+./infrastructure/kafdrop/install.sh
 
 # Install MongoDB
-# echo "Installing MongoDB..."
-# chmod +x ./infrastructure/mongo/install.sh
-# ./infrastructure/mongo/install.sh
+echo "Installing MongoDB..."
+chmod +x ./infrastructure/mongo/install.sh
+./infrastructure/mongo/install.sh
 
 # Install Mongo Express
-# echo "Installing Mongo Express..."
-# chmod +x ./infrastructure/mongo-express/install.sh
-# ./infrastructure/mongo-express/install.sh
+echo "Installing Mongo Express..."
+chmod +x ./infrastructure/mongo-express/install.sh
+./infrastructure/mongo-express/install.sh
 
 # Install Grafana
 echo "Installing Grafana..."
@@ -86,16 +86,16 @@ chmod +x ./infrastructure/grafana/install.sh
 ./infrastructure/grafana/install.sh
 
 # Deploy backend
-# echo "Deploying backend..."
-# kubectl apply -f ./infrastructure/backend/deployment.yaml
+echo "Deploying backend..."
+kubectl apply -f ./infrastructure/backend/deployment.yaml
 
 # Deploy frontend
-# echo "Deploying frontend..."
-# kubectl apply -f ./infrastructure/frontend/deployment.yaml
+echo "Deploying frontend..."
+kubectl apply -f ./infrastructure/frontend/deployment.yaml
 
 # echo "Waiting for all services to be ready..."
-# kubectl wait --for=condition=ready pod -l app=backend -n scientific-workflow --timeout=300s
-# kubectl wait --for=condition=ready pod -l app=frontend -n scientific-workflow --timeout=300s
+kubectl wait --for=condition=ready pod -l app=backend -n scientific-workflow --timeout=300s
+kubectl wait --for=condition=ready pod -l app=frontend -n scientific-workflow --timeout=300s
 
 # Install Argo Events
 echo "Installing Argo Events..."
@@ -103,11 +103,19 @@ chmod +x ./infrastructure/argo-events/install.sh
 ./infrastructure/argo-events/install.sh
 
 nohup kubectl -n scientific-workflow port-forward svc/argo-server 2746:2746 &
-# nohup kubectl -n scientific-workflow port-forward svc/kafdrop 9032:9000 &
-# nohup kubectl -n scientific-workflow port-forward svc/mongo-express 9087:8081 &
+nohup kubectl -n scientific-workflow port-forward svc/kafdrop 9032:9000 &
+nohup kubectl -n scientific-workflow port-forward svc/mongo-express 9087:8081 &
 nohup kubectl -n scientific-workflow port-forward svc/prometheus-kube-prometheus-prometheus 9090:9090 &
 nohup kubectl -n scientific-workflow port-forward svc/workflow-controller-metrics 9091:9090 &
-nohup kubectl -n scientific-workflow port-forward svc/grafana 8080:3000 &
+nohup kubectl -n scientific-workflow port-forward svc/grafana 3000:3000 &
+nohup kubectl port-forward svc/thanos-query -n scientific-workflow 10902:9090 &
+
+# TODO: remove this later and add it to service config
+kubectl patch svc prometheus-kube-prometheus-prometheus \
+  -n scientific-workflow \
+  --type='json' \
+  -p='[{"op": "add", "path": "/spec/ports/-", "value": {"name": "grpc", "port": 10901, "targetPort": 10901}}]'
+  
 echo
 echo "Token for accessing Kubernetes Dashboard:"
 kubectl -n kubernetes-dashboard create token admin-user
@@ -124,5 +132,6 @@ echo "Pipeline Runner API:     http://localhost:30083"
 echo "Pipeline Runner UI:      http://localhost:30084"
 echo "Prometheus UI:           http://localhost:9090"
 echo "Grafana UI:              http://localhost:3000 (admin/admin)"
+echo "Thanos Query UI:         http://localhost:10902"
 echo
 echo "To shut down the system, run: kind delete cluster --name scientific-workflow"

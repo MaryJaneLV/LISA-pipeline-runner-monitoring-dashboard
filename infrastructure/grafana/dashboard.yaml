@@ -12,3 +12,5 @@ data:
     $(cat infrastructure/grafana/dashboards/argo-dashboard.json)
   k8s.json: |-
     $(cat infrastructure/grafana/dashboards/k8s.json)
+  historic-dashboard.json: |-
+    $(cat infrastructure/grafana/dashboards/historic-dashboard.json)
