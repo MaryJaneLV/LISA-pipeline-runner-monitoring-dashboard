@@ -139,39 +139,7 @@ exports.createWorkflow = async (req, res, next) => {
         metrics: {
           prometheus: [
             ...(templateSpec.spec?.metrics?.prometheus || []),
-            // {
-            //   counter: {
-            //     value: '1',
-            //   },
-            //   help: 'who created the workflow',
-            //   labels: [
-            //     {
-            //       key: 'author_id',
-            //       value: req.user._id,
-            //     },
-            //     {
-            //       key: 'workflow_name',
-            //       value: generateName,
-            //     },
-            //   ],
-            //   name: 'workflow_created_by',
-            // },
-            // {
-            //   name: 'created_by',
-            //   help: 'The user who created the workflow',
-            //   labels: [
-            //     {
-            //       key: 'created_by',
-            //       // value: `${req.user._id}`,
-            //       value: 'a user id goes here',
-            //     },
-            //   ],
-            // },
             {
-              gauge: {
-                realtime: true,
-                value: '{{workflow.duration}}',
-              },
               help: 'The user who created the workflow',
               labels: [
                 {
@@ -183,6 +151,9 @@ exports.createWorkflow = async (req, res, next) => {
                   value: generatedName,
                 },
               ],
+              counter: {
+                value: '1',
+              },
               name: 'created_by',
             },
           ],

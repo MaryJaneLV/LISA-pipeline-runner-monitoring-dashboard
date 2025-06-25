@@ -3052,18 +3052,18 @@ data:
       path: /metrics
       port: 9090
       secure: false
-    workflowDefaults:
-      spec:
-        podSpecPatch: |
-          containers:
-            - name: main
-              resources:
-                requests:
-                  memory: "512Mi"
-                  cpu: "250m"
-                limits:
-                  memory: "1Gi"
-                  cpu: "500m"
+    # workflowDefaults:
+    #   spec:
+    #     podSpecPatch: |
+    #       containers:
+    #         - name: main
+    #           resources:
+    #             requests:
+    #               memory: "512Mi"
+    #               cpu: "250m"
+    #             limits:
+    #               memory: "1Gi"
+    #               cpu: "500m"
 ---
 apiVersion: v1
 kind: Service
