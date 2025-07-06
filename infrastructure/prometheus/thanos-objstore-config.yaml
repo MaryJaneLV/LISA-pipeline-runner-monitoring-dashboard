@@ -1,7 +1,0 @@
-# type: S3
-# config:
-#   bucket: 'prometheus-data'
-#   endpoint: 'minio.scientific-workflow.svc.cluster.local:9000'
-#   access_key: 'minioadmin'
-#   secret_key: 'minioadmin'
-#   insecure: true

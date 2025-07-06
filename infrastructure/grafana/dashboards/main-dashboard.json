@@ -18,7 +18,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 4,
+  "id": 1,
   "links": [],
   "panels": [
     {
@@ -26,6 +26,7 @@
         "type": "prometheus",
         "uid": "PBFA97CFB590B2093"
       },
+      "description": "This panel displays a table of Kubernetes pods where the main container has terminated, indicating completed Argo workflows. It shows the reason for termination (e.g., Completed, Error, OOMKilled).",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -151,6 +152,7 @@
         "type": "prometheus",
         "uid": "PBFA97CFB590B2093"
       },
+      "description": "This panel provides a high-level summary of current Kubernetes cluster activity through key metrics:\nTotal Pods: total number of pods running across the cluster.\nNamespace Pods: number of pods running in the scientific-workflow namespace.\nTotal Nodes: number of nodes currently registered in the cluster.\nRunning Workflows: number of active Argo workflows currently in progress.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -251,6 +253,7 @@
         "type": "prometheus",
         "uid": "PBFA97CFB590B2093"
       },
+      "description": "This panel shows the counter of pods that were terminated due to being out of memory",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -307,6 +310,7 @@
       "datasource": {
         "uid": "PBFA97CFB590B2093"
       },
+      "description": "This panel displays a custom metric that is exposed through Pipeline Runner backend application and it shows the author who initiated the workflow. The author metric is exposed when a workflow is launched through the Pipeline Runner UI and the data of the user that is registered in the Pipeline Runner is used. This will not work if the workflow is submitted directly through Argo UI.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -480,6 +484,7 @@
         "type": "loki",
         "uid": "P8E80F9AEF21F6940"
       },
+      "description": "Displays all logs with level \"error\" and \"fatal\" from the entire cluster",
       "fieldConfig": {
         "defaults": {},
         "overrides": []
@@ -571,5 +576,5 @@
   "timezone": "browser",
   "title": "Main Dashboard",
   "uid": "6c442826-461e-4dcb-8a4d-289d213bb5ee",
-  "version": 4
+  "version": 2
 }

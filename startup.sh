@@ -110,7 +110,6 @@ nohup kubectl -n scientific-workflow port-forward svc/workflow-controller-metric
 nohup kubectl -n scientific-workflow port-forward svc/grafana 3000:3000 &
 nohup kubectl port-forward svc/thanos-query -n scientific-workflow 10902:9090 &
 
-# TODO: remove this later and add it to service config
 kubectl patch svc prometheus-kube-prometheus-prometheus \
   -n scientific-workflow \
   --type='json' \

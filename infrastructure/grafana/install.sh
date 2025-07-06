@@ -3,7 +3,7 @@
 echo "Installing Grafana..."
 
 
-# Create the dashboard ConfigMap with the JSON content
+# Create the dashboard ConfigMap with the JSON content and append preconfigured dashboards
 kubectl create configmap grafana-dashboards \
   --from-file=main-dashboard.json=infrastructure/grafana/dashboards/main-dashboard.json \
   --from-file=argo-dashboard.json=infrastructure/grafana/dashboards/argo-dashboard.json \
@@ -16,8 +16,11 @@ kubectl create configmap grafana-dashboards \
 kubectl apply -f infrastructure/grafana/dashboard-provider.yaml
 kubectl apply -f infrastructure/grafana/deployment.yaml
 
-# install Grafana Loki for logs
-# helm repo add grafana https://grafana.github.io/helm-charts
+# Install Grafana Loki for logs
+# Check if Grafana helm repo already exists
+if ! helm repo list | grep -q "^grafana"; then
+  helm repo add grafana https://grafana.github.io/helm-charts
+fi
 helm repo update
 
 helm upgrade --install loki grafana/loki-stack \

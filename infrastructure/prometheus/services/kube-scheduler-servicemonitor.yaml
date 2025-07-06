@@ -4,7 +4,7 @@ metadata:
   name: kube-scheduler
   namespace: kube-system
   labels:
-    release: prometheus # Must match your Prometheus release name
+    release: prometheus
 spec:
   jobLabel: k8s-app
   selector:

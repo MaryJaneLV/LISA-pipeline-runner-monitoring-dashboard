@@ -39,7 +39,6 @@ nodeExporter:
 
 prometheus:
   prometheusSpec:
-    # TODO: fix this later
     service:
       ports:
         - name: grpc
