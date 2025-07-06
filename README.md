@@ -9,18 +9,26 @@ The Pipeline Runner is a complete solution for creating, managing, and monitorin
 - MongoDB for user and workflow persistent data
 - React frontend for user interaction
 - Kubernetes-based infrastructure with one-command deployment
-
+- Prometheus and Grafana for metrics and monitoring
+- Loki for log aggregation and search
+- Thanos for long-term metrics storage
 
 The system consists of the following components:
 
 1. **Infrastructure**
+
    - Kind local Kubernetes cluster
    - Argo Workflows for workflow execution
    - Kubernetes Dashboard for cluster monitoring
    - Minio for object storage
    - Kafka for event messaging
+   - Prometheus for metrics collection and monitoring
+   - Grafana for metrics visualization
+   - Thanos for long-term metrics storage and querying
+   - Loki for log aggregation and querying
 
 2. **Backend**
+
    - Node.js / Express REST API
    - MongoDB for data persistence
    - Socket.IO for real-time updates
@@ -41,26 +49,61 @@ The system consists of the following components:
 ## Quick Start
 
 1. Clone the repository:
+
    ```
-   git clone git@gitlab.up.pt:up201710494/pipeline-runner.git
+   git clone git@github.com:MaryJaneLV/LISA-pipeline-runner-monitoring-dashboard.git
    ```
 
 2. Start the system using the one-command startup script:
+
    ```
-   chmod +x startup.sh
-   ./startup.sh
+   make start
    ```
 
 3. Once the system is running, you can access:
-   - Argo Workflows UI:       http://localhost:2746"
-   - Kubernetes Dashboard:    https://localhost:30081 (Access with token printed in the terminal)"
-   - Minio Console:           http://localhost:30082 (minioadmin/minioadmin)"
-   - Mongo Express:           http://localhost:9087"
-   - Kaftdrop                 http://localhost:9032"
-   - Pipeline Runner API:     http://localhost:30083"
-   - Pipeline Runner UI:      http://localhost:30084"
+
+   - Argo Workflows UI: http://localhost:2746
+   - Kubernetes Dashboard: https://localhost:30081 (Access with token printed in the terminal)"
+   - Minio Console: http://localhost:30082 (minioadmin/minioadmin)"
+   - Mongo Express: http://localhost:9087
+   - Kaftdrop: http://localhost:9032
+   - Pipeline Runner API: http://localhost:30083
+   - Pipeline Runner UI: http://localhost:30084
+   - Prometheus UI: http://localhost:9090
+   - Grafana UI: http://localhost:3000 (admin/admin)
+   - Thanos Query UI: http://localhost:10902
 
 4. Register a new user in the Scientific Workflow UI to get started
+
+## Monitoring Infrastructure
+
+The system includes a comprehensive monitoring stack for observability:
+
+### Metrics Collection and Visualization
+
+- **Prometheus**: Collects metrics from Kubernetes components, Argo Workflows, and application services
+- **Grafana**: Provides pre-configured dashboards for:
+  - Main system overview with key metrics
+  - Argo Workflows monitoring and performance
+  - Kubernetes cluster health and resource usage
+  - Historical data analysis and trends
+- **Thanos**: Enables long-term metrics storage and querying across multiple Prometheus instances
+  - Uses Minio as object storage backend
+  - Provides unified query interface for historical data
+  - Supports data retention policies and compaction
+
+### Log Aggregation
+
+- **Loki**: Collects and indexes logs from all system components
+  - Integrated with Grafana for log visualization
+  - Supports log querying and filtering
+  - Efficient log storage and retrieval
+
+### Monitoring Access
+
+- **Grafana**: http://localhost:3000 (admin/admin) - Main monitoring interface
+- **Prometheus**: http://localhost:9090 - Raw metrics exploration
+- **Thanos Query**: http://localhost:10902 - Long-term metrics querying
 
 ## Development Setup
 
@@ -88,8 +131,8 @@ npm start
 4. Select a template and provide the required parameters
 5. Submit the workflow
 
-
 ### Script-Based Workflows
+
 The system supports script-based workflows where the processing code is supplied as an input parameter:
 
 1. **Script Inputs**: Users can upload Python, JavaScript, or shell scripts to be executed by workflows
@@ -99,14 +142,18 @@ The system supports script-based workflows where the processing code is supplied
 5. **Script Storage**: User scripts are stored in Minio and referenced by workflows
 
 #### Example: Number Processing Script Workflow
+
 This workflow accepts a Python script that processes numeric data:
+
 - Takes a script path as input parameter
 - Runs the script with specified operation and factor parameters
 - Script processes input numbers according to the operation
 - Results are stored as CSV files in Minio
 
 #### Example: Simple Dag
+
 This workflow demonstrates a multi-step data processing pipeline:
+
 - Structured as a Directed Acyclic Graph (DAG) with three sequential steps
 - Generate step applies category weights to input data
 - Transform step normalizes or transforms the weighted data
@@ -114,6 +161,6 @@ This workflow demonstrates a multi-step data processing pipeline:
 - All intermediate and final results are stored in Minio
 - Each step uses containerized Python scripts with specific requirements
 
-NOTE: 
+NOTE:
 
 - ALL WORKFLOWS/WORKFLOW TEMPLATE MUST DEFINE A artifactOutputPath PARAMETER
