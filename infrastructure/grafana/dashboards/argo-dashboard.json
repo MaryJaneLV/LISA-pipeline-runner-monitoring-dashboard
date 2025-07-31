@@ -19,7 +19,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 2,
+  "id": 1,
   "links": [],
   "panels": [
     {
@@ -38,7 +38,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "text"
+                "color": "text",
+                "value": 0
               },
               {
                 "color": "red",
@@ -71,7 +72,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.0.2",
+      "pluginVersion": "12.2.0-16636675413",
       "targets": [
         {
           "editorMode": "code",
@@ -104,7 +105,83 @@
           },
           "mappings": []
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Error"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Failed"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Pending"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "blue",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Running"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "super-light-yellow",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Succeeded"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 8,
@@ -112,7 +189,7 @@
         "x": 8,
         "y": 0
       },
-      "id": 25,
+      "id": 37,
       "options": {
         "legend": {
           "displayMode": "list",
@@ -132,7 +209,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "12.0.2",
+      "pluginVersion": "12.2.0-16636675413",
       "targets": [
         {
           "editorMode": "code",
@@ -167,7 +244,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "red",
@@ -195,7 +273,7 @@
         },
         "showHeader": true
       },
-      "pluginVersion": "12.0.2",
+      "pluginVersion": "12.2.0-16636675413",
       "targets": [
         {
           "editorMode": "code",
@@ -247,7 +325,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "red",
@@ -295,7 +374,7 @@
           }
         ]
       },
-      "pluginVersion": "12.0.2",
+      "pluginVersion": "12.2.0-16636675413",
       "targets": [
         {
           "editorMode": "code",
@@ -361,7 +440,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               }
             ]
           }
@@ -421,7 +501,7 @@
           }
         ]
       },
-      "pluginVersion": "12.0.2",
+      "pluginVersion": "12.2.0-16636675413",
       "targets": [
         {
           "editorMode": "code",
@@ -487,7 +567,7 @@
         "sortOrder": "Descending",
         "wrapLogMessage": false
       },
-      "pluginVersion": "12.0.2",
+      "pluginVersion": "12.2.0-16636675413",
       "targets": [
         {
           "datasource": {
@@ -554,7 +634,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               }
             ]
           }
@@ -613,7 +694,7 @@
         "showHeader": true,
         "sortBy": []
       },
-      "pluginVersion": "12.0.2",
+      "pluginVersion": "12.2.0-16636675413",
       "targets": [
         {
           "editorMode": "code",
@@ -822,14 +903,16 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "red",
                 "value": 80
               }
             ]
-          }
+          },
+          "unit": "bytes"
         },
         "overrides": []
       },
@@ -853,7 +936,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "12.0.2",
+      "pluginVersion": "12.2.0-16636675413",
       "targets": [
         {
           "editorMode": "code",
@@ -995,7 +1078,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "#EAB839",
@@ -1030,7 +1114,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "12.0.2",
+      "pluginVersion": "12.2.0-16636675413",
       "targets": [
         {
           "datasource": {
@@ -1176,7 +1260,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "red",
@@ -1208,7 +1293,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "12.0.2",
+      "pluginVersion": "12.2.0-16636675413",
       "targets": [
         {
           "editorMode": "code",
@@ -1270,7 +1355,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "red",
@@ -1302,7 +1388,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "12.0.2",
+      "pluginVersion": "12.2.0-16636675413",
       "targets": [
         {
           "editorMode": "code",
@@ -1377,7 +1463,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "red",
@@ -1409,7 +1496,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "12.0.2",
+      "pluginVersion": "12.2.0-16636675413",
       "targets": [
         {
           "editorMode": "code",
@@ -1471,7 +1558,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "red",
@@ -1503,7 +1591,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "12.0.2",
+      "pluginVersion": "12.2.0-16636675413",
       "targets": [
         {
           "editorMode": "code",
@@ -1561,5 +1649,5 @@
   "timezone": "browser",
   "title": "Argo Dashboard",
   "uid": "754861b3-2c13-4bb4-9ad8-3bda296b4c9c",
-  "version": 10
+  "version": 4
 }
